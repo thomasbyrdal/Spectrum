@@ -14,9 +14,14 @@ final class PhysicalAudioCapture: AudioCapture, @unchecked Sendable {
         deviceManager.inputDevices()
     }
 
-    init(ringBuffer: AudioRingBuffer, bufferProcessor: AudioBufferProcessor, deviceManager: AudioDeviceManager) {
+    init(
+        ringBuffer: AudioRingBuffer,
+        ringRight: AudioRingBuffer,
+        bufferProcessor: AudioBufferProcessor,
+        deviceManager: AudioDeviceManager
+    ) {
         self.deviceManager = deviceManager
-        self.hal = HALInputCapture(processor: bufferProcessor, ringBuffer: ringBuffer)
+        self.hal = HALInputCapture(processor: bufferProcessor, ringBuffer: ringBuffer, ringRight: ringRight)
     }
 
     func start(device: AudioDevice) async throws {

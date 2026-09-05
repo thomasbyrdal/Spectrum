@@ -13,10 +13,14 @@ struct ContentView: View {
                 .frame(height: headerHeight)
             ControlBarView(viewModel: viewModel)
                 .frame(height: controlBarHeight)
-            SpectrumView(data: viewModel.spectrum, configuration: viewModel.configuration)
-                .equatable()
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .layoutPriority(1)
+            SpectrumDisplayView(
+                left: viewModel.spectrum,
+                right: viewModel.displaysStereoSpectrum ? viewModel.spectrumRight : nil,
+                configuration: viewModel.configuration
+            )
+            .equatable()
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .layoutPriority(1)
             StatusView(viewModel: viewModel)
                 .frame(height: statusHeight)
         }
@@ -37,12 +41,7 @@ struct ContentView: View {
                 .foregroundStyle(SpectrumTheme.textSecondary)
             Spacer(minLength: 12)
             if viewModel.nowPlaying.isAvailable {
-                Text(viewModel.nowPlaying.displayTitle)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(SpectrumTheme.textPrimary)
-                    .lineLimit(1)
-                    .truncationMode(.tail)
-                    .frame(maxWidth: 360, alignment: .trailing)
+                MarqueeText(text: viewModel.nowPlaying.displayTitle)
                 NowPlayingTransportButtons(controller: viewModel.nowPlaying)
             }
             HStack(spacing: 8) {

@@ -17,6 +17,7 @@ final class HALInputCapture: @unchecked Sendable {
     private let loggedFormatError = Atomic<Bool>(false)
     private let processor: AudioBufferProcessor
     private let ringBuffer: AudioRingBuffer
+    private let ringRight: AudioRingBuffer
 
     private var convertScratch: UnsafeMutablePointer<Float>
     private var convertCapacity = 16_384
@@ -32,9 +33,10 @@ final class HALInputCapture: @unchecked Sendable {
     private(set) var sampleRate: Double = 48_000
     private(set) var capturedChannelCount: Int = 1
 
-    init(processor: AudioBufferProcessor, ringBuffer: AudioRingBuffer) {
+    init(processor: AudioBufferProcessor, ringBuffer: AudioRingBuffer, ringRight: AudioRingBuffer) {
         self.processor = processor
         self.ringBuffer = ringBuffer
+        self.ringRight = ringRight
         self.convertScratch = .allocate(capacity: convertCapacity)
         self.convertScratch.initialize(repeating: 0, count: convertCapacity)
     }
@@ -207,7 +209,19 @@ final class HALInputCapture: @unchecked Sendable {
         guard frames > 0 else { return noErr }
 
         if capture.isFloat {
-            capture.processor.writeMono(from: list, frames: frames, into: capture.ringBuffer, maxChannels: 2)
+            if capture.channels >= 2 {
+                capture.processor.write(
+                    from: list,
+                    frames: frames,
+                    intoLeft: capture.ringBuffer,
+                    intoRight: capture.ringRight,
+                    maxChannels: 2
+                )
+            } else {
+                capture.processor.writeMono(from: list, frames: frames, into: capture.ringBuffer, maxChannels: 1)
+            }
+        } else if capture.channels >= 2 {
+            capture.convertIntegerToStereo(list: list, frames: frames)
         } else {
             capture.convertIntegerToMono(list: list, frames: frames)
         }
@@ -249,6 +263,54 @@ final class HALInputCapture: @unchecked Sendable {
             mixInterleavedInteger(data, frames: frames, channels: min(channels, 2), into: convertScratch)
         }
         processor.writeMono(convertScratch, count: frames, into: ringBuffer)
+    }
+
+    private func convertIntegerToStereo(list: UnsafeMutableAudioBufferListPointer, frames: Int) {
+        guard frames * 2 <= convertCapacity else { return }
+        let left = convertScratch
+        let right = convertScratch + frames
+
+        if isNonInterleaved || list.count > 1 && list[0].mNumberChannels <= 1 {
+            memset(left, 0, frames * MemoryLayout<Float>.stride)
+            memset(right, 0, frames * MemoryLayout<Float>.stride)
+            if let data = list[0].mData {
+                addIntegerChannel(data, frames: frames, into: left)
+            }
+            if list.count > 1, let data = list[1].mData {
+                addIntegerChannel(data, frames: frames, into: right)
+            } else {
+                memcpy(right, left, frames * MemoryLayout<Float>.stride)
+            }
+        } else {
+            guard let data = list[0].mData else { return }
+            extractInterleavedInteger(data, frames: frames, channels: min(channels, 2), channel: 0, into: left)
+            extractInterleavedInteger(data, frames: frames, channels: min(channels, 2), channel: 1, into: right)
+        }
+        processor.writeStereo(left: left, right: right, count: frames, intoLeft: ringBuffer, intoRight: ringRight)
+    }
+
+    private func extractInterleavedInteger(
+        _ data: UnsafeMutableRawPointer,
+        frames: Int,
+        channels: Int,
+        channel: Int,
+        into destination: UnsafeMutablePointer<Float>
+    ) {
+        let channels = max(channels, 1)
+        let index = min(max(channel, 0), channels - 1)
+        if bitsPerChannel == 16 {
+            let source = data.assumingMemoryBound(to: Int16.self)
+            for frame in 0..<frames {
+                destination[frame] = Float(source[frame * channels + index]) / 32_768.0
+            }
+        } else if bitsPerChannel >= 24 {
+            let source = data.assumingMemoryBound(to: Int32.self)
+            for frame in 0..<frames {
+                destination[frame] = Float(source[frame * channels + index]) / Float(Int32.max)
+            }
+        } else {
+            logUnsupportedFormatOnce()
+        }
     }
 
     private func addIntegerChannel(_ data: UnsafeMutableRawPointer, frames: Int, into destination: UnsafeMutablePointer<Float>) {

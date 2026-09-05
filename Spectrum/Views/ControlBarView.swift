@@ -9,6 +9,9 @@ struct ControlBarView: View {
                 AudioSourcePicker(viewModel: viewModel)
                 ResolutionPicker(viewModel: viewModel)
                 Spacer(minLength: 8)
+                if viewModel.stereoSpectrumAvailable {
+                    stereoChip
+                }
                 rangeChip
             }
             .frame(height: 36)
@@ -48,6 +51,24 @@ struct ControlBarView: View {
         } else {
             Color.clear
         }
+    }
+
+    private var stereoChip: some View {
+        HStack(spacing: 8) {
+            Text("Show stereo spectrum")
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(SpectrumTheme.textSecondary)
+                .tracking(0.3)
+            Toggle("Show stereo spectrum", isOn: $viewModel.showStereoSpectrum)
+                .toggleStyle(.switch)
+                .controlSize(.mini)
+                .labelsHidden()
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .frame(height: 32)
+        .background(SpectrumTheme.background.opacity(0.6), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .accessibilityElement(children: .combine)
     }
 
     private var rangeChip: some View {

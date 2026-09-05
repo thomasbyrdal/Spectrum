@@ -14,7 +14,20 @@ final class SpectrumViewModel {
     var displayFrameRate: Double = 0
     var sampleRate: Double = 48_000
     var channelCount: Int = 1
+    var spectrumRight: SpectrumData?
+    var showStereoSpectrum: Bool {
+        didSet {
+            UserDefaults.standard.set(showStereoSpectrum, forKey: Self.stereoPreferenceKey)
+            engine.setShowStereoSpectrum(showStereoSpectrum)
+        }
+    }
     var disconnectedMessage: String?
+
+    var stereoSpectrumAvailable: Bool { channelCount >= 2 }
+
+    var displaysStereoSpectrum: Bool {
+        showStereoSpectrum && stereoSpectrumAvailable && spectrumRight != nil
+    }
 
     let devices: AudioDeviceViewModel
     let permissions = PermissionsManager()
@@ -30,28 +43,33 @@ final class SpectrumViewModel {
     private var deviceListEpoch = 0
     private var displayFrameTimes: [CFAbsoluteTime] = []
 
+    private static let stereoPreferenceKey = "showStereoSpectrum"
+
     init() {
         let initial = SpectrumConfiguration()
         let engine = AudioEngineManager(configuration: initial)
         self.configuration = initial
         self.engine = engine
         self.devices = AudioDeviceViewModel(manager: engine.deviceManager)
+        self.showStereoSpectrum = UserDefaults.standard.bool(forKey: Self.stereoPreferenceKey)
         self.spectrum = SpectrumData.empty(
             barCount: initial.barCount,
             sampleRate: 48_000,
             configuration: initial
         )
+        engine.setShowStereoSpectrum(showStereoSpectrum)
 
-        engine.setSpectrumHandler { [weak self] data in
+        engine.setSpectrumHandler { [weak self] pair in
             Task { @MainActor in
                 guard let self else { return }
-                guard data.generation != 0, data.generation == self.acceptedGeneration else {
+                guard pair.generation != 0, pair.generation == self.acceptedGeneration else {
                     return
                 }
-                self.spectrum = data
+                self.spectrum = pair.left
+                self.spectrumRight = pair.right
                 self.noteDisplayFrame()
-                if abs(self.sampleRate - data.sampleRate) > 0.5 {
-                    self.sampleRate = data.sampleRate
+                if abs(self.sampleRate - pair.left.sampleRate) > 0.5 {
+                    self.sampleRate = pair.left.sampleRate
                 }
             }
         }
@@ -126,6 +144,7 @@ final class SpectrumViewModel {
             sampleRate: sampleRate,
             configuration: configuration
         )
+        spectrumRight = nil
         syncNowPlaying()
         beginCapture()
     }
@@ -137,6 +156,11 @@ final class SpectrumViewModel {
         engine.applyConfiguration(configuration)
         if configuration.barCount != previousBarCount {
             spectrum = SpectrumData.empty(
+                barCount: configuration.barCount,
+                sampleRate: sampleRate,
+                configuration: configuration
+            )
+            spectrumRight = SpectrumData.empty(
                 barCount: configuration.barCount,
                 sampleRate: sampleRate,
                 configuration: configuration

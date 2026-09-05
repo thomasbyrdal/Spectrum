@@ -21,8 +21,13 @@ final class SystemAudioCapture: ProcessAudioCapture, @unchecked Sendable {
         [AudioDevice.systemAudio(sampleRate: sampleRate)]
     }
 
-    init(ringBuffer: AudioRingBuffer, bufferProcessor: AudioBufferProcessor, deviceManager: AudioDeviceManager) {
-        self.hal = HALInputCapture(processor: bufferProcessor, ringBuffer: ringBuffer)
+    init(
+        ringBuffer: AudioRingBuffer,
+        ringRight: AudioRingBuffer,
+        bufferProcessor: AudioBufferProcessor,
+        deviceManager: AudioDeviceManager
+    ) {
+        self.hal = HALInputCapture(processor: bufferProcessor, ringBuffer: ringBuffer, ringRight: ringRight)
         self.deviceManager = deviceManager
     }
 
