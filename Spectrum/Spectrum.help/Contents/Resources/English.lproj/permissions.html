@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Privacy &amp; permissions</title>
+    <meta name="AppleTitle" content="Privacy &amp; permissions">
+    <meta name="AppleTopic" content="Privacy &amp; permissions">
+    <meta name="description" content="How Spectrum uses Microphone and Screen Recording permission. Spectrum does not record the screen.">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="permissions"></a>
+    <h1>Privacy &amp; permissions</h1>
+    <p class="lead">Spectrum needs operating-system permission only so it can hear audio. It does not record, store, or upload that audio, and it does not use Screen Recording to capture anything visual.</p>
+
+    <div class="callout">
+        <p><strong>Spectrum does not record your screen.</strong> When you enable Spectrum in System Settings under Screen Recording, macOS is allowing the app to hear audio that other programs are playing. Spectrum uses that sound only to draw the live frequency spectrum.</p>
+        <p>Spectrum does not take screenshots, does not capture video, does not read the contents of windows, and does not keep a recording of the display. Apple uses the Screen Recording switch for this kind of audio access. There is no separate “system audio” switch in System Settings.</p>
+    </div>
+
+    <h2>Which permission you need</h2>
+    <table>
+        <thead>
+            <tr>
+                <th>What you want to analyze</th>
+                <th>Permission</th>
+                <th>System Settings location</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Test Signal (sine, noise, sweep)</td>
+                <td>None</td>
+                <td>—</td>
+            </tr>
+            <tr>
+                <td>A microphone, USB mic, or audio interface</td>
+                <td>Microphone</td>
+                <td>Privacy &amp; Security &gt; Microphone</td>
+            </tr>
+            <tr>
+                <td>System Audio (everything playing on the Mac)</td>
+                <td>Screen Recording (for audio only)</td>
+                <td>Privacy &amp; Security &gt; Screen Recording</td>
+            </tr>
+            <tr>
+                <td>A single application’s output</td>
+                <td>Screen Recording (for audio only)</td>
+                <td>Privacy &amp; Security &gt; Screen Recording</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="warning">
+        <p><strong>Do not enable Spectrum under Accessibility.</strong> Spectrum does not need the Accessibility (control your Mac) permission. Granting that does not help audio capture. The relevant panes are <strong>Microphone</strong> and <strong>Screen Recording</strong> only.</p>
+    </div>
+
+    <a name="screen-recording"></a>
+    <h2>Screen Recording permission, in detail</h2>
+    <p>macOS protects the audio that applications send to the speakers. The setting that unlocks that audio is named Screen Recording, even when an app never looks at the screen.</p>
+    <p>If the permission is off, Spectrum still opens and test signals still work, but System Audio and application sources stay silent. The analyzer is running; it is simply not allowed to hear other programs.</p>
+
+    <h3>What Spectrum does with the grant</h3>
+    <ul>
+        <li>Listens to the sound you selected (the Mac’s output, or one application)</li>
+        <li>Draws the live spectrum, peak hold, and input meters</li>
+        <li>Discards the audio after it has been analyzed — nothing is saved as a movie, screenshot, or sound file</li>
+    </ul>
+
+    <h3>What Spectrum does not do with the grant</h3>
+    <ul>
+        <li>Does not record the screen or any display</li>
+        <li>Does not capture window contents, the menu bar, or the pointer</li>
+        <li>Does not photograph the desktop</li>
+        <li>Does not use the permission to observe other apps visually</li>
+        <li>Does not send audio or video off the Mac</li>
+    </ul>
+
+    <h3>How to grant Screen Recording</h3>
+    <ol class="steps">
+        <li>In Spectrum, open the <strong>Input</strong> menu and choose <strong>System Audio</strong> or a running application. macOS may show a prompt. Click <strong>Open System Settings</strong> if it offers that.</li>
+        <li>Or choose <strong>Spectrum &gt; Settings…</strong>, open the <strong>Audio</strong> tab, and under System Audio click <strong>Open System Settings</strong> or <strong>Request Access</strong>.</li>
+        <li>In System Settings go to <strong>Privacy &amp; Security &gt; Screen Recording</strong>.</li>
+        <li>Turn <strong>Spectrum</strong> on. If the list shows more than one Spectrum row, turn on each one you recognize, or turn them all on.</li>
+        <li>Fully quit Spectrum (<strong>Spectrum &gt; Quit Spectrum</strong> or Command-Q). Closing the window or hiding the app is not enough.</li>
+        <li>Open Spectrum again, then select System Audio or the application. Play something on the Mac. You should see a live spectrum.</li>
+    </ol>
+
+    <a name="after-granting"></a>
+    <h3>Quit and reopen after granting access</h3>
+    <p>macOS applies Screen Recording permission when the app starts. If Spectrum was already running when you turned the switch on, it will not hear system or application audio until you quit and open it again.</p>
+    <p>If Screen Recording already shows Spectrum as allowed but the plot is still silent, quit Spectrum completely and open it from the Dock, Launchpad, or the Applications folder. Then choose System Audio or an application and play sound.</p>
+    <p>If System Settings lists more than one Spectrum, enable them, quit the app, and open Spectrum once more.</p>
+
+    <a name="microphone"></a>
+    <h2>Microphone permission</h2>
+    <p>Physical devices (Built-in Microphone, USB microphones, audio interfaces) use the standard Microphone permission. Spectrum asks for it when you select an Audio Input device. You can also open <strong>Spectrum &gt; Settings… &gt; Audio</strong> and click <strong>Request Access</strong> or <strong>Open System Settings</strong>.</p>
+    <p>Path: <strong>System Settings &gt; Privacy &amp; Security &gt; Microphone</strong>, then enable Spectrum.</p>
+    <p>Microphone access is used only to read the selected hardware input for the spectrum display. Spectrum does not record the mic to a file and does not use the mic when you are on Test Signal, System Audio, or an application source.</p>
+
+    <h2>Checking status inside Spectrum</h2>
+    <p>The Audio tab in Settings shows the current Microphone status and whether Screen Recording is granted. If capture cannot start, the control bar shows an error and buttons to request access or open System Settings.</p>
+</main>
+</body>
+</html>

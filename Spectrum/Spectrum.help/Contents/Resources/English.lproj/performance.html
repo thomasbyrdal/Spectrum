@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Performance</title>
+    <meta name="AppleTitle" content="Performance">
+    <meta name="AppleTopic" content="Performance">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="performance"></a>
+    <h1>Performance</h1>
+    <p class="lead">These options are in <strong>Spectrum &gt; Settings… &gt; Performance</strong>. The status bar <strong>FPS</strong> value is the actual plot update rate, not the target.</p>
+
+    <h2>Target FPS</h2>
+    <p>30 or 60 frames per second requested for the spectrum view. Large FFTs may not reach 60; the FPS meter shows what is actually drawn.</p>
+
+    <h2>Smoothing</h2>
+    <p>When enabled, bar levels attack and release instead of jumping every hop. Higher attack and release coefficients follow the signal more quickly; lower values look more averaged. Use Low CPU preset if the machine is busy: fewer bars, smaller FFT, 50% overlap, 30 fps.</p>
+
+    <h2>FFT overlap</h2>
+    <p>50%, 75%, or 87.5%. Higher overlap updates the analyzer more often for a given FFT size, which looks smoother, at higher CPU cost. Hop size is also limited by the target frame rate so a huge FFT can still refresh in real time.</p>
+
+    <h2>CPU meter</h2>
+    <p>The status bar CPU figure is this process’s usage relative to elapsed time (it can exceed 100% on multi-core Macs). It is display-only and is not sampled from the audio callback.</p>
+</main>
+</body>
+</html>

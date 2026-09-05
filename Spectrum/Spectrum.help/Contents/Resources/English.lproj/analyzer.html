@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Analyzer settings</title>
+    <meta name="AppleTitle" content="Analyzer settings">
+    <meta name="AppleTopic" content="Analyzer settings">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="analyzer"></a>
+    <h1>Analyzer settings</h1>
+    <p class="lead">Bars, FFT size, and ranges can be changed from the control bar or from <strong>Spectrum &gt; Settings… &gt; Spectrum</strong>.</p>
+
+    <h2>Bar count</h2>
+    <p>Each bar is a log-spaced frequency band. More bars show more detail and cost more drawing work. Typical values are 64–256; 1024 is for very dense displays.</p>
+
+    <h2>FFT size</h2>
+    <p>The FFT length in samples. Frequency resolution is <strong>sample rate ÷ FFT size</strong>. At 48 kHz:</p>
+    <table>
+        <thead>
+            <tr><th>FFT size</th><th>Bin spacing (approx.)</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>2048</td><td>23.4 Hz</td></tr>
+            <tr><td>4096</td><td>11.7 Hz</td></tr>
+            <tr><td>8192</td><td>5.9 Hz</td></tr>
+            <tr><td>16384</td><td>2.9 Hz</td></tr>
+            <tr><td>32768</td><td>1.5 Hz</td></tr>
+            <tr><td>65536</td><td>0.73 Hz</td></tr>
+        </tbody>
+    </table>
+    <p>Low frequencies (for example near 20–80 Hz) need a large FFT or they smear across bars. Larger FFTs are heavier on the CPU. Presets: Speech uses a mid-size FFT and 80 Hz–8 kHz; Music and Detailed use larger FFTs; Low CPU uses a smaller FFT and 30 fps.</p>
+
+    <h2>Window</h2>
+    <ul>
+        <li><strong>Hann</strong> — default; good general-purpose leakage control</li>
+        <li><strong>Blackman-Harris</strong> — lower sidelobes, slightly wider main lobe</li>
+        <li><strong>Rectangular</strong> — no taper; sharpest peaks, more leakage into neighboring bins</li>
+    </ul>
+
+    <h2>Frequency range</h2>
+    <p>Default display span is 20 Hz to 22 500 Hz. Settings &gt; Spectrum lets you edit minimum and maximum Hz. The right edge is clamped to Nyquist (half the input sample rate). At 44.1 kHz, you cannot display 22.5 kHz; the chip shows Nyquist limited.</p>
+
+    <h2>dB range</h2>
+    <p>Vertical scale in dBFS. Default floor is −100 dB. The top of the scale is 0 dB in Settings unless you lower it. Signals below the floor appear empty; signals above the top clip to the top of the plot.</p>
+</main>
+</body>
+</html>

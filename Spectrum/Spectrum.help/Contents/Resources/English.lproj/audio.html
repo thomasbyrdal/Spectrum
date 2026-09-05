@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Choosing an audio source</title>
+    <meta name="AppleTitle" content="Choosing an audio source">
+    <meta name="AppleTopic" content="Choosing an audio source">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="audio-sources"></a>
+    <h1>Choosing an audio source</h1>
+    <p class="lead">Use the <strong>Input</strong> menu on the control bar. A checkmark shows the current source. Spectrum always listens to one source at a time.</p>
+
+    <h2>Test Signal</h2>
+    <p>Generated inside the app. No microphone or Screen Recording permission is required. Use these to confirm the plot, FFT size, and meters before connecting live audio.</p>
+    <table>
+        <thead>
+            <tr><th>Signal</th><th>What you should see</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Sine 1 kHz / 100 Hz / 10 kHz</td><td>A strong peak at that frequency</td></tr>
+            <tr><td>Sweep</td><td>A tone that moves up through the range</td></tr>
+            <tr><td>White Noise</td><td>Energy spread across frequencies (brighter at high frequencies on a log axis)</td></tr>
+            <tr><td>Pink Noise</td><td>A flatter-looking spectrum on the log frequency axis</td></tr>
+            <tr><td>Multi-tone</td><td>Several simultaneous peaks</td></tr>
+        </tbody>
+    </table>
+
+    <h2>Audio Input</h2>
+    <p>Physical input devices: built-in microphone, USB microphones, and audio interfaces. Sample rate is shown next to the device name. This path requires <a href="permissions.html#microphone">Microphone permission</a>.</p>
+    <p>If a device is unplugged while it is selected, Spectrum reports that the input disconnected and falls back to another device or to the 1 kHz test signal.</p>
+
+    <h2>System Audio</h2>
+    <p>Captures a mix of what the Mac is playing. Requires <a href="permissions.html#screen-recording">Screen Recording permission</a> even though no video is captured. After you grant access, quit Spectrum and open it again if the plot is still silent, then play music or a video.</p>
+
+    <h2>Applications</h2>
+    <p>The Input menu lists applications that are currently playing sound. Apps that are idle are omitted, and the list is refreshed every time you open the menu. Choose an app to analyze only that app’s output. This also requires Screen Recording permission so Spectrum can hear the audio, not so it can view the app’s windows.</p>
+
+    <h2>Settings &gt; Audio</h2>
+    <p>The Audio tab shows permission status, links to System Settings, and optional analyzer presets (Speech, Music, Detailed, Low CPU). Source selection is still done from the main window Input menu.</p>
+</main>
+</body>
+</html>

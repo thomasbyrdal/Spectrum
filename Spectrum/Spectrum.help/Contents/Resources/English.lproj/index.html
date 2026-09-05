@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Spectrum Help</title>
+    <meta name="AppleTitle" content="Spectrum Help">
+    <meta name="AppleTopic" content="Spectrum Help">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="welcome"></a>
+    <h1>Spectrum Help</h1>
+    <p class="lead">Spectrum is a real-time frequency analyzer for macOS. It listens to audio and draws a live spectrum. It does not record audio to disk, and it does not record your screen.</p>
+
+    <div class="callout">
+        <p><strong>System Audio and application capture need Screen Recording permission.</strong> macOS uses that privacy switch so Spectrum can hear playback. Spectrum never captures video, screenshots, or window contents. See <a href="permissions.html">Privacy &amp; permissions</a> for the full explanation and setup steps.</p>
+    </div>
+
+    <h2>What Spectrum does</h2>
+    <p>Choose an input, and Spectrum performs a fast Fourier transform (FFT) on the incoming audio, then draws frequency bars from low to high. You can analyze:</p>
+    <ul>
+        <li>Built-in test signals (no permission required)</li>
+        <li>Physical inputs such as microphones and audio interfaces (Microphone permission)</li>
+        <li>Everything playing through the Mac’s output, or a single application (Screen Recording permission for audio only)</li>
+    </ul>
+
+    <h2>Topics</h2>
+    <ol class="toc">
+        <li><a href="permissions.html">Privacy &amp; permissions</a> — Microphone, Screen Recording, and what Spectrum does <em>not</em> do with those grants</li>
+        <li><a href="audio.html">Choosing an audio source</a> — Test signals, inputs, system audio, and applications</li>
+        <li><a href="window.html">The main window</a> — Menus, plot, and status bar</li>
+        <li><a href="analyzer.html">Analyzer settings</a> — Bars, FFT size, frequency range, and dB range</li>
+        <li><a href="appearance.html">Appearance</a> — Bar colors, grid, and peak hold</li>
+        <li><a href="performance.html">Performance</a> — Target frame rate, smoothing, and overlap</li>
+        <li><a href="troubleshooting.html">Troubleshooting</a> — Silent plot, permissions, and common setup issues</li>
+    </ol>
+
+    <h2>Open this help later</h2>
+    <p>Choose <strong>Help &gt; Spectrum Help</strong>, or jump to a topic from the Help menu. On most Mac keyboards, <strong>Command-?</strong> also opens Help.</p>
+</main>
+</body>
+</html>

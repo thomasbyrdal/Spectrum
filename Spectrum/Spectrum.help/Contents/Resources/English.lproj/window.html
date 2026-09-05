@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>The main window</title>
+    <meta name="AppleTitle" content="The main window">
+    <meta name="AppleTopic" content="The main window">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="main-window"></a>
+    <h1>The main window</h1>
+    <p class="lead">Spectrum is a single analyzer window: header, control bar, plot, and status bar.</p>
+
+    <h2>Header</h2>
+    <p>The running indicator is green when capture is active and gray when it is stopped or switching sources.</p>
+
+    <h2>Control bar</h2>
+    <table>
+        <thead>
+            <tr><th>Menu</th><th>Purpose</th></tr>
+        </thead>
+        <tbody>
+            <tr><td>Input</td><td>Test signal, hardware input, system audio, or an application</td></tr>
+            <tr><td>Bars</td><td>Number of frequency bars (32–1024)</td></tr>
+            <tr><td>FFT</td><td>Transform size; larger values give finer frequency resolution</td></tr>
+            <tr><td>Window</td><td>Hann, Blackman-Harris, or Rectangular window on each FFT frame</td></tr>
+            <tr><td>Style</td><td>Bar colors: solid, rainbow gradient, or blue / green / red gradients</td></tr>
+            <tr><td>Peak</td><td>Peak hold off, a bar marker, or a darker rectangle above the live bar</td></tr>
+        </tbody>
+    </table>
+    <p>The range chip on the right shows the displayed frequency span. If the source sample rate cannot reach your configured maximum, <strong>Nyquist limited</strong> appears. Spectrum never invents energy above half the sample rate.</p>
+    <p>If a permission or device error occurs, a message and buttons appear on the second row of the control bar.</p>
+
+    <h2>Plot</h2>
+    <p>Frequency is logarithmic from left (low) to right (high). Level is in dBFS from the bottom of the dB range to the top. Optional grid lines and peak-hold graphics overlay the bars. Details are in <a href="analyzer.html">Analyzer settings</a> and <a href="appearance.html">Appearance</a>.</p>
+
+    <h2>Status bar</h2>
+    <p>From the left: current input name, sample rate, channel count (Spectrum mixes to mono for analysis), FFT size, frequency resolution (sample rate ÷ FFT size), CPU use of this process, and the actual display <strong>FPS</strong> (how often the plot accepted a new frame over the last second).</p>
+    <p>On the right, input meters show peak and RMS as 12-segment LED bars (five green, five yellow, two red) in dBFS.</p>
+
+    <h2>Settings and About</h2>
+    <p>Choose <strong>Spectrum &gt; Settings…</strong> for Audio, Spectrum, Appearance, and Performance tabs. <strong>Spectrum &gt; About Spectrum</strong> shows the application icon and copyright.</p>
+</main>
+</body>
+</html>

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>Troubleshooting</title>
+    <meta name="AppleTitle" content="Troubleshooting">
+    <meta name="AppleTopic" content="Troubleshooting">
+    <meta name="robots" content="anchors">
+    <link rel="stylesheet" href="help.css">
+</head>
+<body>
+<header class="nav">
+    <nav>
+        <a href="index.html">Welcome</a>
+        <a href="permissions.html">Privacy &amp; permissions</a>
+        <a href="audio.html">Audio sources</a>
+        <a href="window.html">Main window</a>
+        <a href="analyzer.html">Analyzer</a>
+        <a href="appearance.html">Appearance</a>
+        <a href="performance.html">Performance</a>
+        <a href="troubleshooting.html">Troubleshooting</a>
+    </nav>
+</header>
+<main>
+    <a name="troubleshooting"></a>
+    <h1>Troubleshooting</h1>
+
+    <h2>The plot is flat or stuck at the dB floor</h2>
+    <ol class="steps">
+        <li>Select <strong>Test Signal &gt; Sine 1 kHz</strong>. If you see a peak, the analyzer works and the live source is silent or blocked.</li>
+        <li>For a microphone, confirm <a href="permissions.html#microphone">Microphone</a> is granted and the correct device is selected. Speak or play into that input.</li>
+        <li>For System Audio or an application, follow <a href="permissions.html#screen-recording">Screen Recording</a>: enable Spectrum, <strong>quit completely</strong>, open Spectrum again, then play audio.</li>
+        <li>Application capture lists only apps that are currently outputting audio. Open the Input menu again after playback starts.</li>
+        <li>Check the dB range in Settings. If the floor is very high, quiet signals disappear.</li>
+    </ol>
+
+    <h2>System Settings says Spectrum is allowed, but system audio is still silent</h2>
+    <p>Quit Spectrum completely (Command-Q), then open it again and choose System Audio or an application while something is playing. macOS does not apply a new Screen Recording grant until the app is restarted. If the Screen Recording list shows more than one Spectrum, turn them on, quit, and reopen the app. See <a href="permissions.html#after-granting">Quit and reopen after granting access</a>.</p>
+
+    <h2>macOS asked for Screen Recording and I am worried about privacy</h2>
+    <p>That prompt is required so Spectrum can hear what other apps are playing. It does not record the screen. Read <a href="permissions.html">Privacy &amp; permissions</a>.</p>
+
+    <h2>I turned on Accessibility and nothing changed</h2>
+    <p>Spectrum does not use the Accessibility permission. Use Microphone and/or Screen Recording instead.</p>
+
+    <h2>Nyquist limited</h2>
+    <p>Your maximum frequency is above half the sample rate. Lower the maximum in Settings or use a higher-rate device. The extra range cannot contain real signal.</p>
+
+    <h2>High CPU or low FPS</h2>
+    <p>Choose the Low CPU preset, fewer bars, a smaller FFT, 50% overlap, or 30 fps. The status bar FPS is the real update rate.</p>
+
+    <h2>Device unplugged</h2>
+    <p>Spectrum reports a disconnected input and switches to another device or the 1 kHz test signal.</p>
+</main>
+</body>
+</html>
