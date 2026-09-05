@@ -63,6 +63,14 @@ struct SpectrumData: Sendable, Equatable {
     }
 }
 
+/// One published analyzer frame. `right` is set only in stereo display mode.
+struct SpectrumPair: Sendable, Equatable {
+    let left: SpectrumData
+    let right: SpectrumData?
+
+    var generation: UInt64 { left.generation }
+}
+
 struct InputLevel: Sendable, Equatable {
     var peakDBFS: Float
     var rmsDBFS: Float

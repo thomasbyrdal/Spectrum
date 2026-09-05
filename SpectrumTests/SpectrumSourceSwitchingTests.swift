@@ -13,7 +13,7 @@ final class SpectrumSourceSwitchingTests: XCTestCase {
 
         let engine = AudioEngineManager(configuration: configuration)
         let probe = SpectrumLevelProbe()
-        engine.setSpectrumHandler { probe.append($0) }
+        engine.setSpectrumHandler { probe.append($0.left) }
         defer { engine.stop() }
 
         try await engine.start(source: .testSignal(.sine1k))

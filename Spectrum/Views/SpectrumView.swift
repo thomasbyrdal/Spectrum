@@ -1,10 +1,31 @@
 import SwiftUI
 
+struct SpectrumDisplayView: View, Equatable {
+    let left: SpectrumData
+    let right: SpectrumData?
+    let configuration: SpectrumConfiguration
+
+    var body: some View {
+        if let right {
+            HStack(spacing: 0) {
+                SpectrumView(data: left, configuration: configuration, channelLabel: "L")
+                Rectangle()
+                    .fill(SpectrumTheme.panelStroke)
+                    .frame(width: 1)
+                SpectrumView(data: right, configuration: configuration, channelLabel: "R")
+            }
+        } else {
+            SpectrumView(data: left, configuration: configuration)
+        }
+    }
+}
+
 // This is where the fun happens...
 //
 struct SpectrumView: View, Equatable {
     let data: SpectrumData
     let configuration: SpectrumConfiguration
+    var channelLabel: String? = nil
 
     var body: some View {
         Canvas { context, size in
@@ -15,8 +36,23 @@ struct SpectrumView: View, Equatable {
             drawBars(context: context, plot: plot)
             drawFrequencyAxis(context: context, plot: plot, canvasSize: size)
             drawDecibelAxis(context: context, plot: plot)
+            drawChannelLabel(context: context, plot: plot)
         }
         .background(SpectrumTheme.background)
+    }
+
+    private func drawChannelLabel(context: GraphicsContext, plot: CGRect) {
+        guard let channelLabel, !channelLabel.isEmpty else { return }
+        let resolved = context.resolve(
+            Text(channelLabel)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+                .foregroundColor(SpectrumTheme.textSecondary)
+        )
+        context.draw(
+            resolved,
+            at: CGPoint(x: plot.minX + 8, y: plot.minY + 10),
+            anchor: .leading
+        )
     }
 
     private func plotRect(in size: CGSize) -> CGRect {

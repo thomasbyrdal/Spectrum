@@ -112,4 +112,84 @@ final class AudioBufferProcessorTests: XCTestCase {
             XCTAssertEqual(sample, 0.4, accuracy: 0.0001)
         }
     }
+
+    func testHALStyleInterleavedStereoWritesSeparateChannels() {
+        let frames = 8
+        let channels = 2
+        let list = AudioBufferList.allocate(maximumBuffers: 1)
+        defer { free(list.unsafeMutablePointer) }
+        let data = UnsafeMutablePointer<Float>.allocate(capacity: frames * channels)
+        defer { data.deallocate() }
+        for frame in 0..<frames {
+            data[frame * 2] = 0.8
+            data[frame * 2 + 1] = 0.2
+        }
+        list[0] = AudioBuffer(
+            mNumberChannels: UInt32(channels),
+            mDataByteSize: UInt32(frames * channels * MemoryLayout<Float>.stride),
+            mData: UnsafeMutableRawPointer(data)
+        )
+
+        let left = AudioRingBuffer(minimumCapacity: 32)
+        let right = AudioRingBuffer(minimumCapacity: 32)
+        AudioBufferProcessor(capacity: 16).write(
+            from: list,
+            frames: frames,
+            intoLeft: left,
+            intoRight: right
+        )
+
+        var leftOut = [Float](repeating: 0, count: frames)
+        var rightOut = [Float](repeating: 0, count: frames)
+        XCTAssertEqual(leftOut.withUnsafeMutableBufferPointer { left.read(into: $0.baseAddress!, count: frames) }, frames)
+        XCTAssertEqual(rightOut.withUnsafeMutableBufferPointer { right.read(into: $0.baseAddress!, count: frames) }, frames)
+        for frame in 0..<frames {
+            XCTAssertEqual(leftOut[frame], 0.8, accuracy: 0.0001)
+            XCTAssertEqual(rightOut[frame], 0.2, accuracy: 0.0001)
+        }
+    }
+
+    func testDeinterleavedStereoWritesSeparateChannels() {
+        let frames = 4
+        let list = AudioBufferList.allocate(maximumBuffers: 2)
+        defer { free(list.unsafeMutablePointer) }
+        let leftData = UnsafeMutablePointer<Float>.allocate(capacity: frames)
+        let rightData = UnsafeMutablePointer<Float>.allocate(capacity: frames)
+        defer {
+            leftData.deallocate()
+            rightData.deallocate()
+        }
+        for frame in 0..<frames {
+            leftData[frame] = 1.0
+            rightData[frame] = 0.0
+        }
+        list[0] = AudioBuffer(
+            mNumberChannels: 1,
+            mDataByteSize: UInt32(frames * MemoryLayout<Float>.stride),
+            mData: UnsafeMutableRawPointer(leftData)
+        )
+        list[1] = AudioBuffer(
+            mNumberChannels: 1,
+            mDataByteSize: UInt32(frames * MemoryLayout<Float>.stride),
+            mData: UnsafeMutableRawPointer(rightData)
+        )
+
+        let left = AudioRingBuffer(minimumCapacity: 32)
+        let right = AudioRingBuffer(minimumCapacity: 32)
+        AudioBufferProcessor(capacity: 16).write(
+            from: list,
+            frames: frames,
+            intoLeft: left,
+            intoRight: right
+        )
+
+        var leftOut = [Float](repeating: 0, count: frames)
+        var rightOut = [Float](repeating: 0, count: frames)
+        XCTAssertEqual(leftOut.withUnsafeMutableBufferPointer { left.read(into: $0.baseAddress!, count: frames) }, frames)
+        XCTAssertEqual(rightOut.withUnsafeMutableBufferPointer { right.read(into: $0.baseAddress!, count: frames) }, frames)
+        for frame in 0..<frames {
+            XCTAssertEqual(leftOut[frame], 1.0, accuracy: 0.0001)
+            XCTAssertEqual(rightOut[frame], 0.0, accuracy: 0.0001)
+        }
+    }
 }

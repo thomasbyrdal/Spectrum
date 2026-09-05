@@ -1,3 +1,4 @@
+import Accelerate
 import Foundation
 import Synchronization
 
@@ -5,6 +6,7 @@ import Synchronization
 /// audio callback → lock-free ring buffer → DSP queue → `SpectrumData` → UI callback.
 final class AudioEngineManager: @unchecked Sendable {
     let ringBuffer = AudioRingBuffer(minimumCapacity: 1 << 18)
+    let ringRight = AudioRingBuffer(minimumCapacity: 1 << 18)
     let bufferProcessor = AudioBufferProcessor()
     let deviceManager = AudioDeviceManager()
 
@@ -12,11 +14,16 @@ final class AudioEngineManager: @unchecked Sendable {
     private let dspQueue: DispatchQueue
     private var dspTimer: DispatchSourceTimer?
     private var processor: SpectrumProcessor
+    private var rightProcessor: SpectrumProcessor
     private var configuration: SpectrumConfiguration
     private var sampleRate: Double = 48_000
     private var channelCount: Int = 1
+    private var sourceIsStereo = false
+    private var showStereoSpectrum = false
     private var running = false
     private var readScratch: UnsafeMutablePointer<Float>
+    private var readScratchRight: UnsafeMutablePointer<Float>
+    private var mixScratch: UnsafeMutablePointer<Float>
     private var readCapacity = 8_192
 
     private var testCapture: TestSignalCapture
@@ -24,7 +31,7 @@ final class AudioEngineManager: @unchecked Sendable {
     private var systemCapture: SystemAudioCapture
     private var activeCapture: AudioCapture?
 
-    private var onSpectrum: ((SpectrumData) -> Void)?
+    private var onSpectrum: ((SpectrumPair) -> Void)?
     private var onActivity: ((Bool) -> Void)?
     private var lastUIPush: UInt64 = 0
     private var spectrumGeneration: UInt64 = 0
@@ -56,16 +63,23 @@ final class AudioEngineManager: @unchecked Sendable {
         self.dspQueue = queue
         self.configuration = configuration
         self.processor = SpectrumProcessor(configuration: configuration, sampleRate: 48_000)
+        self.rightProcessor = SpectrumProcessor(configuration: configuration, sampleRate: 48_000)
         self.readScratch = .allocate(capacity: readCapacity)
         self.readScratch.initialize(repeating: 0, count: readCapacity)
+        self.readScratchRight = .allocate(capacity: readCapacity)
+        self.readScratchRight.initialize(repeating: 0, count: readCapacity)
+        self.mixScratch = .allocate(capacity: readCapacity)
+        self.mixScratch.initialize(repeating: 0, count: readCapacity)
         self.testCapture = TestSignalCapture(ringBuffer: ringBuffer, bufferProcessor: bufferProcessor)
         self.physicalCapture = PhysicalAudioCapture(
             ringBuffer: ringBuffer,
+            ringRight: ringRight,
             bufferProcessor: bufferProcessor,
             deviceManager: deviceManager
         )
         self.systemCapture = SystemAudioCapture(
             ringBuffer: ringBuffer,
+            ringRight: ringRight,
             bufferProcessor: bufferProcessor,
             deviceManager: deviceManager
         )
@@ -75,6 +89,10 @@ final class AudioEngineManager: @unchecked Sendable {
         stop()
         readScratch.deinitialize(count: readCapacity)
         readScratch.deallocate()
+        readScratchRight.deinitialize(count: readCapacity)
+        readScratchRight.deallocate()
+        mixScratch.deinitialize(count: readCapacity)
+        mixScratch.deallocate()
     }
 
     var currentSampleRate: Double { sampleRate }
@@ -82,12 +100,22 @@ final class AudioEngineManager: @unchecked Sendable {
     var isRunning: Bool { running }
     var isTestSignalRunning: Bool { testCapture.isRunning }
 
-    func setSpectrumHandler(_ handler: @escaping (SpectrumData) -> Void) {
+    func setSpectrumHandler(_ handler: @escaping (SpectrumPair) -> Void) {
         onSpectrum = handler
     }
 
     func setActivityHandler(_ handler: @escaping (Bool) -> Void) {
         onActivity = handler
+    }
+
+    func setShowStereoSpectrum(_ enabled: Bool) {
+        dspQueue.async { [weak self] in
+            guard let self, self.showStereoSpectrum != enabled else { return }
+            self.showStereoSpectrum = enabled
+            self.processor.reset()
+            self.rightProcessor.reset()
+            self.lastUIPush = 0
+        }
     }
 
     func applyConfiguration(_ configuration: SpectrumConfiguration) {
@@ -97,6 +125,7 @@ final class AudioEngineManager: @unchecked Sendable {
             guard let self else { return }
             self.configuration = configuration
             self.processor.reconfigure(configuration: configuration, sampleRate: self.sampleRate)
+            self.rightProcessor.reconfigure(configuration: configuration, sampleRate: self.sampleRate)
         }
     }
 
@@ -113,7 +142,9 @@ final class AudioEngineManager: @unchecked Sendable {
         stopCapturesAndDSP()
         try abortIfStale(generation)
         ringBuffer.reset()
+        ringRight.reset()
         bufferProcessor.resetMeters()
+        sourceIsStereo = false
         lastUIPush = 0
         analysisPhase = .idle
         lastAudibleNanos = 0
@@ -150,8 +181,11 @@ final class AudioEngineManager: @unchecked Sendable {
 
         let work = { [weak self] in
             guard let self, self.stillCurrent(generation) else { return }
+            self.sourceIsStereo = self.channelCount >= 2
             self.processor.reconfigure(configuration: self.configuration, sampleRate: self.sampleRate)
+            self.rightProcessor.reconfigure(configuration: self.configuration, sampleRate: self.sampleRate)
             self.processor.reset()
+            self.rightProcessor.reset()
             self.dspLoopGeneration = spectrumGeneration
             self.running = true
             self.startDSPLoop(intervalMs: Self.activeTickMs)
@@ -238,7 +272,9 @@ final class AudioEngineManager: @unchecked Sendable {
         var heardAudio = false
         while running, hops < 8 {
             let hop = max(processor.hopSize, 64)
-            let available = ringBuffer.availableToRead
+            let available = sourceIsStereo
+                ? min(ringBuffer.availableToRead, ringRight.availableToRead)
+                : ringBuffer.availableToRead
             guard available >= hop else { break }
             if processAvailable(hop: hop) {
                 heardAudio = true
@@ -268,7 +304,21 @@ final class AudioEngineManager: @unchecked Sendable {
         let count = ringBuffer.read(into: readScratch, count: hop)
         guard count > 0 else { return false }
 
-        let hopPeak = peakMagnitude(count: count)
+        var hopPeak = peakMagnitude(readScratch, count: count)
+        var analyzeLeft = readScratch
+        var analyzeCount = count
+        var rightCount = 0
+
+        if sourceIsStereo {
+            rightCount = ringRight.read(into: readScratchRight, count: hop)
+            hopPeak = max(hopPeak, peakMagnitude(readScratchRight, count: rightCount))
+            if !showStereoSpectrum, rightCount > 0 {
+                mixHops(count: min(count, rightCount))
+                analyzeLeft = mixScratch
+                analyzeCount = min(count, rightCount)
+            }
+        }
+
         let audible = hopPeak >= Self.audiblePeak
         let meters = bufferProcessor.consumeMeters()
 
@@ -281,29 +331,49 @@ final class AudioEngineManager: @unchecked Sendable {
 
         let peakDB = DecibelCalculator.amplitudeToDB(meters.peak, floorDB: configuration.minimumDB)
         let rmsDB = DecibelCalculator.amplitudeToDB(meters.rms, floorDB: configuration.minimumDB)
-        let snapshot = processor.push(
-            samples: UnsafeBufferPointer(start: readScratch, count: count),
+        let publishStereo = showStereoSpectrum && sourceIsStereo && rightCount > 0
+
+        let leftSnapshot = processor.push(
+            samples: UnsafeBufferPointer(start: analyzeLeft, count: analyzeCount),
             peakDBFS: peakDB,
             rmsDBFS: rmsDB,
             isClipping: meters.clipping
         )
+        let rightSnapshot = publishStereo
+            ? rightProcessor.push(
+                samples: UnsafeBufferPointer(start: readScratchRight, count: rightCount),
+                peakDBFS: peakDB,
+                rmsDBFS: rmsDB,
+                isClipping: meters.clipping
+            )
+            : nil
 
-        guard let snapshot else { return true }
+        guard let leftSnapshot else { return true }
 
-        let now = snapshot.timestamp
+        let now = leftSnapshot.timestamp
         let minInterval = UInt64(1_000_000_000 / max(configuration.targetFrameRate, 15))
         if now &- lastUIPush >= minInterval || lastUIPush == 0 {
             lastUIPush = now
             let generation = dspLoopGeneration
             guard generation == spectrumGeneration else { return true }
-            onSpectrum?(snapshot.withGeneration(generation))
+            onSpectrum?(
+                SpectrumPair(
+                    left: leftSnapshot.withGeneration(generation),
+                    right: rightSnapshot?.withGeneration(generation)
+                )
+            )
         }
         return true
     }
 
-    private func peakMagnitude(count: Int) -> Float {
+    private func mixHops(count: Int) {
+        var scale: Float = 0.5
+        vDSP_vadd(readScratch, 1, readScratchRight, 1, mixScratch, 1, vDSP_Length(count))
+        vDSP_vsmul(mixScratch, 1, &scale, mixScratch, 1, vDSP_Length(count))
+    }
+
+    private func peakMagnitude(_ samples: UnsafeMutablePointer<Float>, count: Int) -> Float {
         var peak: Float = 0
-        let samples = readScratch
         for index in 0..<count {
             let magnitude = abs(samples[index])
             if magnitude > peak {
@@ -319,8 +389,10 @@ final class AudioEngineManager: @unchecked Sendable {
         analysisPhase = .analyzing
         if previous != .decaying {
             processor.reset()
+            rightProcessor.reset()
         } else {
             processor.resetTimeWindow()
+            rightProcessor.resetTimeWindow()
         }
         lastUIPush = 0
         startDSPLoop(intervalMs: Self.activeTickMs)
@@ -331,6 +403,7 @@ final class AudioEngineManager: @unchecked Sendable {
         guard analysisPhase == .analyzing else { return }
         analysisPhase = .decaying
         processor.resetTimeWindow()
+        rightProcessor.resetTimeWindow()
         lastUIPush = 0
         startDSPLoop(intervalMs: decayTickMs)
         onActivity?(false)
@@ -355,11 +428,19 @@ final class AudioEngineManager: @unchecked Sendable {
         guard now &- lastUIPush >= minInterval || lastUIPush == 0 else { return }
 
         let decayed = processor.decayTowardSilence()
+        let rightDecayed = showStereoSpectrum && sourceIsStereo
+            ? rightProcessor.decayTowardSilence()
+            : nil
         lastUIPush = now
         let generation = dspLoopGeneration
         guard generation == spectrumGeneration else { return }
-        onSpectrum?(decayed.data.withGeneration(generation))
-        if decayed.settled {
+        onSpectrum?(
+            SpectrumPair(
+                left: decayed.data.withGeneration(generation),
+                right: rightDecayed?.data.withGeneration(generation)
+            )
+        )
+        if decayed.settled && (rightDecayed?.settled ?? true) {
             enterIdle()
         }
     }
@@ -368,9 +449,17 @@ final class AudioEngineManager: @unchecked Sendable {
         guard count > readCapacity else { return }
         readScratch.deinitialize(count: readCapacity)
         readScratch.deallocate()
+        readScratchRight.deinitialize(count: readCapacity)
+        readScratchRight.deallocate()
+        mixScratch.deinitialize(count: readCapacity)
+        mixScratch.deallocate()
         readCapacity = 1 << (Int.bitWidth - (count - 1).leadingZeroBitCount)
         readScratch = .allocate(capacity: readCapacity)
         readScratch.initialize(repeating: 0, count: readCapacity)
+        readScratchRight = .allocate(capacity: readCapacity)
+        readScratchRight.initialize(repeating: 0, count: readCapacity)
+        mixScratch = .allocate(capacity: readCapacity)
+        mixScratch.initialize(repeating: 0, count: readCapacity)
     }
 }
 

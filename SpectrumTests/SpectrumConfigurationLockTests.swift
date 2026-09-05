@@ -10,7 +10,7 @@ final class SpectrumConfigurationLockTests: XCTestCase {
     func testChangingBarsFFTSizeAndWindowDoesNotLockTheApplication() async throws {
         let engine = AudioEngineManager(configuration: SpectrumConfiguration())
         let probe = SpectrumFrameProbe()
-        engine.setSpectrumHandler { probe.append($0) }
+        engine.setSpectrumHandler { probe.append($0.left) }
         defer { engine.stop() }
 
         try await engine.start(source: .testSignal(.sine1k))
@@ -48,7 +48,7 @@ final class SpectrumConfigurationLockTests: XCTestCase {
     func testRepeatedControlChangesFromMainThreadStayResponsive() async throws {
         let engine = AudioEngineManager(configuration: SpectrumConfiguration())
         let probe = SpectrumFrameProbe()
-        engine.setSpectrumHandler { probe.append($0) }
+        engine.setSpectrumHandler { probe.append($0.left) }
         defer { engine.stop() }
 
         try await engine.start(source: .testSignal(.sine1k))
