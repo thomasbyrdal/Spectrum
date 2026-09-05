@@ -334,7 +334,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Y3CLZZG2LV;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -345,6 +345,7 @@
 				INFOPLIST_KEY_CFBundleHelpBookName = "Spectrum Help";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Spectrum talks to Music and Spotify only to show the current track and change playback.";
 				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Thomas Byrdal, 2026. byrdal.dk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spectrum needs microphone access to analyze audio from physical input devices such as the built-in microphone, USB microphones, and audio interfaces.";
@@ -380,7 +381,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
-				DEVELOPMENT_TEAM = Y3CLZZG2LV;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -391,6 +392,7 @@
 				INFOPLIST_KEY_CFBundleHelpBookName = "Spectrum Help";
 				INFOPLIST_KEY_CFBundleIconName = AppIcon;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSAppleEventsUsageDescription = "Spectrum talks to Music and Spotify only to show the current track and change playback.";
 				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Thomas Byrdal, 2026. byrdal.dk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spectrum needs microphone access to analyze audio from physical input devices such as the built-in microphone, USB microphones, and audio interfaces.";

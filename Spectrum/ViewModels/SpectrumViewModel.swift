@@ -19,6 +19,7 @@ final class SpectrumViewModel {
     let devices: AudioDeviceViewModel
     let permissions = PermissionsManager()
     let settings = SettingsViewModel()
+    let nowPlaying = NowPlayingController()
 
     private let engine: AudioEngineManager
     private let cpuMonitor = CPUUsageMonitor()
@@ -90,6 +91,7 @@ final class SpectrumViewModel {
                 self.refreshDisplayFrameRate()
             }
         }
+        syncNowPlaying()
         beginCapture()
     }
 
@@ -100,6 +102,7 @@ final class SpectrumViewModel {
         captureSession += 1
         acceptedGeneration = 0
         engine.stop()
+        nowPlaying.detach()
         isRunning = false
         didStart = false
         resetDisplayFrameRate()
@@ -117,6 +120,7 @@ final class SpectrumViewModel {
             sampleRate: sampleRate,
             configuration: configuration
         )
+        syncNowPlaying()
         beginCapture()
     }
 
@@ -239,7 +243,16 @@ final class SpectrumViewModel {
             } else {
                 source = .testSignal(.sine1k)
             }
+            syncNowPlaying()
             beginCapture()
+        }
+    }
+
+    private func syncNowPlaying() {
+        if case .application(let process) = source, NowPlayingController.supports(source) {
+            nowPlaying.attach(to: process)
+        } else {
+            nowPlaying.detach()
         }
     }
 

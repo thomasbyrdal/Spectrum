@@ -21,6 +21,7 @@ struct ContentView: View {
         }
         .background(SpectrumTheme.background)
         .frame(minWidth: 1080, minHeight: 540)
+        .background(WindowTitleSync(title: viewModel.nowPlaying.windowTitle))
         .onAppear { viewModel.start() }
         .onDisappear { viewModel.stop() }
     }
@@ -33,7 +34,16 @@ struct ContentView: View {
             Text("Real-time analyzer")
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(SpectrumTheme.textSecondary)
-            Spacer()
+            Spacer(minLength: 12)
+            if viewModel.nowPlaying.isAvailable {
+                Text(viewModel.nowPlaying.displayTitle)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(SpectrumTheme.textPrimary)
+                    .lineLimit(1)
+                    .truncationMode(.tail)
+                    .frame(maxWidth: 360, alignment: .trailing)
+                NowPlayingTransportButtons(controller: viewModel.nowPlaying)
+            }
             HStack(spacing: 8) {
                 Circle()
                     .fill(viewModel.isRunning ? SpectrumTheme.running : SpectrumTheme.stopped)
@@ -54,6 +64,56 @@ struct ContentView: View {
             Rectangle()
                 .fill(SpectrumTheme.panelStroke)
                 .frame(height: 1)
+        }
+    }
+}
+
+struct NowPlayingTransportButtons: View {
+    var controller: NowPlayingController
+
+    var body: some View {
+        HStack(spacing: 6) {
+            transportButton("backward.end.fill", "Previous", action: controller.previous)
+            transportButton("play.fill", "Play", action: controller.play)
+            transportButton("stop.fill", "Stop", action: controller.stop)
+            transportButton("forward.end.fill", "Next", action: controller.next)
+        }
+    }
+
+    private func transportButton(_ systemName: String, _ label: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: systemName)
+                .font(.system(size: 11, weight: .semibold))
+                .frame(width: 28, height: 22)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(SpectrumTheme.textPrimary)
+        .background(
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Color.white.opacity(0.10))
+        )
+        .overlay {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .stroke(Color.white.opacity(0.22), lineWidth: 1)
+        }
+        .help(label)
+        .accessibilityLabel(label)
+    }
+}
+
+/// SwiftUI's navigation title often does not refresh on macOS when the track changes.
+private struct WindowTitleSync: NSViewRepresentable {
+    let title: String
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.isHidden = true
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        DispatchQueue.main.async {
+            nsView.window?.title = title
         }
     }
 }
