@@ -1,7 +1,7 @@
 import OSLog
 
 enum AppLog {
-    static let subsystem = "com.byrdal.Spectrum"
+    static let subsystem = "dk.byrdal.Spectrum"
 
     static let audio = Logger(subsystem: subsystem, category: "audio")
     static let dsp = Logger(subsystem: subsystem, category: "dsp")

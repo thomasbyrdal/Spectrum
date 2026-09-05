@@ -40,7 +40,7 @@ final class TestSignalCapture: AudioCapture, @unchecked Sendable {
         self.generator = LiveSignalGenerator(kind: kind, sampleRate: sampleRate)
         self.scratch = .allocate(capacity: scratchCount)
         self.scratch.initialize(repeating: 0, count: scratchCount)
-        let queue = DispatchQueue(label: "com.byrdal.Spectrum.test-signal", qos: .userInitiated)
+        let queue = DispatchQueue(label: "dk.byrdal.Spectrum.test-signal", qos: .userInitiated)
         queue.setSpecific(key: Self.queueKey, value: 1)
         self.queue = queue
     }

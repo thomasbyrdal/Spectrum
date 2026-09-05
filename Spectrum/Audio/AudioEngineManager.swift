@@ -35,7 +35,7 @@ final class AudioEngineManager: @unchecked Sendable {
     var currentSpectrumGeneration: UInt64 { spectrumGeneration }
 
     init(configuration: SpectrumConfiguration) {
-        let queue = DispatchQueue(label: "com.byrdal.Spectrum.dsp", qos: .userInitiated)
+        let queue = DispatchQueue(label: "dk.byrdal.Spectrum.dsp", qos: .userInitiated)
         queue.setSpecific(key: Self.dspQueueKey, value: 1)
         self.dspQueue = queue
         self.configuration = configuration

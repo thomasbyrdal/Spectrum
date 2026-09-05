@@ -6,7 +6,7 @@ import OSLog
 /// Enumerates Core Audio hardware devices and tap-able processes.
 /// Device names are never hard-coded; they come from the system.
 final class AudioDeviceManager: @unchecked Sendable {
-    private let queue = DispatchQueue(label: "com.byrdal.Spectrum.devices")
+    private let queue = DispatchQueue(label: "dk.byrdal.Spectrum.devices")
     private var hardwareListener: AudioObjectPropertyListenerBlock?
     private var processListener: AudioObjectPropertyListenerBlock?
     private var disconnectionHandler: ((AudioObjectID) -> Void)?

@@ -1,6 +1,6 @@
 # Spectrum
 
-Native macOS real-time spectrum analyzer. Open `Spectrum.xcodeproj` and run the **Spectrum** scheme (bundle ID `com.byrdal.Spectrum`).
+Native macOS real-time spectrum analyzer. Open `Spectrum.xcodeproj` and run the **Spectrum** scheme (bundle ID `dk.byrdal.Spectrum`).
 
 The app listens to a selectable source and draws a live logarithmic spectrum. It does not record audio to disk and does not capture the screen. System and per-app capture use Core Audio Taps; macOS exposes that as Screen Recording permission.
 
@@ -10,6 +10,7 @@ The app listens to a selectable source and draws a live logarithmic spectrum. It
 | UI | SwiftUI + AppKit |
 | DSP | Accelerate `vDSP_fft_zrip` |
 | Deployment | macOS 15+ |
+| Bundle ID | `dk.byrdal.Spectrum` |
 | Sandbox | **Off** (required for Core Audio Taps) |
 
 ## Build and test
@@ -35,7 +36,7 @@ Input menu
           PhysicalAudioCapture     (HAL IOProc)
           SystemAudioCapture       (Core Audio Tap → private aggregate → HAL IOProc)
     → AudioRingBuffer              (SPSC, Float32 mono)
-    → DSP timer on com.byrdal.Spectrum.dsp
+    → DSP timer on dk.byrdal.Spectrum.dsp
     → FFT → log-frequency bars → dBFS → attack/release + peak hold
     → SpectrumData (stamped with a generation)
     → SwiftUI Canvas               (drops frames from a superseded source)
@@ -132,6 +133,7 @@ Stable workflow for tap work:
 - Rebuild only when you need new code. Treat the next Run as a new app: grant again, quit, reopen that new binary.
 - Prefer a persistent Apple Development signing identity over **Sign to Run Locally**. A changing ad-hoc signature is the worst case for TCC.
 - Do not expect System Settings to “just work” across Xcode Runs. The UI label is `Spectrum`; the grant is the signature.
+- Changing `PRODUCT_BUNDLE_IDENTIFIER` is also a new TCC client. Grants for an older ID (this project used to be `com.byrdal.Spectrum`) do not transfer. Re-grant Microphone and Screen Recording for `dk.byrdal.Spectrum`.
 
 End-user builds that keep one Developer ID (or App Store) signature do not hit this. The Help book therefore does not mention Xcode. This section is for people who Run from the IDE.
 
