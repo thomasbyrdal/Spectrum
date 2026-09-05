@@ -16,6 +16,11 @@
 		};
 /* End PBXContainerItemProxy section */
 
+/* Begin PBXFileReference section */
+		A10000000000000000000007 /* Spectrum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spectrum.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A10000000000000000000008 /* SpectrumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpectrumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A10000000000000000000004 /* Spectrum */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -28,11 +33,6 @@
 			sourceTree = "<group>";
 		};
 /* End PBXFileSystemSynchronizedRootGroup section */
-
-/* Begin PBXFileReference section */
-		A10000000000000000000007 /* Spectrum.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Spectrum.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		A10000000000000000000008 /* SpectrumTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = SpectrumTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
-/* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
 		A1000000000000000000000C /* Frameworks */ = {
@@ -52,15 +52,6 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		A1000000000000000000000B = {
-			isa = PBXGroup;
-			children = (
-				A10000000000000000000004 /* Spectrum */,
-				A10000000000000000000005 /* SpectrumTests */,
-				A10000000000000000000006 /* Products */,
-			);
-			sourceTree = "<group>";
-		};
 		A10000000000000000000006 /* Products */ = {
 			isa = PBXGroup;
 			children = (
@@ -68,6 +59,15 @@
 				A10000000000000000000008 /* SpectrumTests.xctest */,
 			);
 			name = Products;
+			sourceTree = "<group>";
+		};
+		A1000000000000000000000B = {
+			isa = PBXGroup;
+			children = (
+				A10000000000000000000004 /* Spectrum */,
+				A10000000000000000000005 /* SpectrumTests */,
+				A10000000000000000000006 /* Products */,
+			);
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
@@ -327,25 +327,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Spectrum/Spectrum.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y3CLZZG2LV;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Spectrum/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Spectrum;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_CFBundleHelpBookFolder = Spectrum.help;
 				INFOPLIST_KEY_CFBundleHelpBookName = "Spectrum Help";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Thomas Byrdal, 2026. byrdal.dk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spectrum needs microphone access to analyze audio from physical input devices such as the built-in microphone, USB microphones, and audio interfaces.";
-				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Spectrum uses Screen Recording permission so Core Audio Taps can capture system and application audio. It does not record your screen.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Spectrum uses Screen Recording permission so Core Audio Taps can capture system and application audio. It does not record your screen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
@@ -369,25 +373,29 @@
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CODE_SIGN_ENTITLEMENTS = Spectrum/Spectrum.entitlements;
 				CODE_SIGN_IDENTITY = "-";
+				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = Y3CLZZG2LV;
 				ENABLE_APP_SANDBOX = NO;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = Spectrum/Info.plist;
 				INFOPLIST_KEY_CFBundleDisplayName = Spectrum;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
 				INFOPLIST_KEY_CFBundleHelpBookFolder = Spectrum.help;
 				INFOPLIST_KEY_CFBundleHelpBookName = "Spectrum Help";
+				INFOPLIST_KEY_CFBundleIconName = AppIcon;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.music";
+				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
 				INFOPLIST_KEY_NSHumanReadableCopyright = "© Thomas Byrdal, 2026. byrdal.dk";
 				INFOPLIST_KEY_NSMicrophoneUsageDescription = "Spectrum needs microphone access to analyze audio from physical input devices such as the built-in microphone, USB microphones, and audio interfaces.";
-				INFOPLIST_KEY_NSAudioCaptureUsageDescription = "Spectrum captures system and application audio through Core Audio Taps so it can display a live frequency spectrum. It does not record the screen.";
-				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Spectrum uses Screen Recording permission so Core Audio Taps can capture system and application audio. It does not record your screen.";
 				INFOPLIST_KEY_NSPrincipalClass = NSApplication;
+				INFOPLIST_KEY_NSScreenCaptureUsageDescription = "Spectrum uses Screen Recording permission so Core Audio Taps can capture system and application audio. It does not record your screen.";
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/../Frameworks",
