@@ -2,7 +2,7 @@ import SwiftUI
 
 // This is where the fun happens...
 //
-struct SpectrumView: View {
+struct SpectrumView: View, Equatable {
     let data: SpectrumData
     let configuration: SpectrumConfiguration
 

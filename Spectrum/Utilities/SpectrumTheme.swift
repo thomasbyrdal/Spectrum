@@ -12,7 +12,7 @@ enum SpectrumTheme {
     static let warning = Color(red: 0.98, green: 0.72, blue: 0.22)
     static let clip = Color(red: 0.95, green: 0.28, blue: 0.28)
     static let running = Color(red: 0.35, green: 0.88, blue: 0.45)
-    static let stopped = Color(red: 0.45, green: 0.48, blue: 0.52)
+    static let stopped = Color(red: 0.95, green: 0.28, blue: 0.28)
     static let barFill = Color(red: 0.25, green: 0.92, blue: 0.78)
     static let peakMarker = Color.white.opacity(0.85)
     static let meterLEDGreen = Color(red: 0.18, green: 0.92, blue: 0.32)

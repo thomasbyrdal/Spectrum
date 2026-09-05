@@ -27,7 +27,7 @@
     <p class="lead">Spectrum is a single analyzer window: header, control bar, plot, and status bar.</p>
 
     <h2>Header</h2>
-    <p>The running indicator is green when capture is active and gray when it is stopped or switching sources.</p>
+    <p>The running indicator is green when the selected source is producing audio, and red <strong>Stopped</strong> when capture is off, switching sources, or the source is silent (for example, playback is paused). Spectrum keeps listening while Stopped. The live bars clear and the peak-hold markers fall to the floor, then the plot stops updating until audio returns. Resizing the window still redraws the current plot.</p>
 
     <h2>Control bar</h2>
     <table>

@@ -14,6 +14,7 @@ struct ContentView: View {
             ControlBarView(viewModel: viewModel)
                 .frame(height: controlBarHeight)
             SpectrumView(data: viewModel.spectrum, configuration: viewModel.configuration)
+                .equatable()
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .layoutPriority(1)
             StatusView(viewModel: viewModel)
@@ -51,7 +52,7 @@ struct ContentView: View {
                     .shadow(color: viewModel.isRunning ? SpectrumTheme.running.opacity(0.8) : .clear, radius: 4)
                 Text(viewModel.isRunning ? "Running" : "Stopped")
                     .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(viewModel.isRunning ? SpectrumTheme.running : SpectrumTheme.textSecondary)
+                    .foregroundStyle(viewModel.isRunning ? SpectrumTheme.running : SpectrumTheme.stopped)
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 5)

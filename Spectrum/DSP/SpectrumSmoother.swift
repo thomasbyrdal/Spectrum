@@ -81,4 +81,42 @@ final class SpectrumSmoother: @unchecked Sendable {
 
         return (state, peakState)
     }
+
+    /// Snaps live bars to the floor and lets peak-hold markers fall until they settle.
+    func decayTowardFloor(
+        timestamp: UInt64,
+        floorDB: Float,
+        enablePeakHold: Bool
+    ) -> (levels: [Float], peaks: [Float], settled: Bool) {
+        let dt: Float
+        if let last = lastTimestamp, timestamp > last {
+            dt = max(Float(timestamp - last) / 1_000_000_000.0, 1.0 / 240.0)
+        } else {
+            dt = 1.0 / 60.0
+        }
+        lastTimestamp = timestamp
+
+        for index in 0..<state.count {
+            state[index] = floorDB
+        }
+
+        if !enablePeakHold {
+            peakState = state
+            peakHoldRemaining = [Float](repeating: 0, count: peakState.count)
+            return (state, peakState, true)
+        }
+
+        let settleTolerance: Float = 0.75
+        var settled = true
+        for index in 0..<peakState.count {
+            peakHoldRemaining[index] = 0
+            peakState[index] -= peakDecayDBPerSecond * dt
+            if peakState[index] <= floorDB + settleTolerance {
+                peakState[index] = floorDB
+            } else {
+                settled = false
+            }
+        }
+        return (state, peakState, settled)
+    }
 }

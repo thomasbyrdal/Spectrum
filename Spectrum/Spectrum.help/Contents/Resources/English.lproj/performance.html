@@ -35,6 +35,9 @@
     <h2>FFT overlap</h2>
     <p>50%, 75%, or 87.5%. Higher overlap updates the analyzer more often for a given FFT size, which looks smoother, at higher CPU cost. Hop size is also limited by the target frame rate so a huge FFT can still refresh in real time.</p>
 
+    <h2>Silent sources</h2>
+    <p>If the selected input stops producing audio, Spectrum shows <strong>Stopped</strong> and pauses FFT work. The live bars clear and the peak-hold markers fall to the floor, then the plot stops updating (except when you resize the window). Capture stays connected so playback can resume immediately as <strong>Running</strong>.</p>
+
     <h2>CPU meter</h2>
     <p>The status bar CPU figure is this process’s usage relative to elapsed time (it can exceed 100% on multi-core Macs). It is display-only and is not sampled from the audio callback.</p>
 </main>

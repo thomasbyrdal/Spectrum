@@ -25,11 +25,27 @@ final class AudioEngineManager: @unchecked Sendable {
     private var activeCapture: AudioCapture?
 
     private var onSpectrum: ((SpectrumData) -> Void)?
+    private var onActivity: ((Bool) -> Void)?
     private var lastUIPush: UInt64 = 0
     private var spectrumGeneration: UInt64 = 0
     private var dspLoopGeneration: UInt64 = 0
+    private var analysisPhase: AnalysisPhase = .idle
+    private var lastAudibleNanos: UInt64 = 0
+    private var captureStartedNanos: UInt64 = 0
     private let startLock = AsyncStartLock()
     private let startGeneration = Atomic<UInt64>(0)
+
+    /// Linear peak below this is treated as silence (~−66 dBFS).
+    private static let audiblePeak: Float = 5e-4
+    private static let silenceHoldNanos: UInt64 = 400_000_000
+    private static let activeTickMs = 3
+    private static let idleTickMs = 50
+
+    private enum AnalysisPhase {
+        case idle
+        case analyzing
+        case decaying
+    }
 
     /// Generation stamped onto spectrum frames for the current source.
     var currentSpectrumGeneration: UInt64 { spectrumGeneration }
@@ -70,6 +86,10 @@ final class AudioEngineManager: @unchecked Sendable {
         onSpectrum = handler
     }
 
+    func setActivityHandler(_ handler: @escaping (Bool) -> Void) {
+        onActivity = handler
+    }
+
     func applyConfiguration(_ configuration: SpectrumConfiguration) {
         // Never `sync` onto the DSP queue from the UI thread. The DSP work must
         // remain finite so this block can actually run.
@@ -95,6 +115,9 @@ final class AudioEngineManager: @unchecked Sendable {
         ringBuffer.reset()
         bufferProcessor.resetMeters()
         lastUIPush = 0
+        analysisPhase = .idle
+        lastAudibleNanos = 0
+        captureStartedNanos = DispatchTime.now().uptimeNanoseconds
         let spectrumGeneration = bumpSpectrumGeneration()
 
         switch source {
@@ -131,7 +154,7 @@ final class AudioEngineManager: @unchecked Sendable {
             self.processor.reset()
             self.dspLoopGeneration = spectrumGeneration
             self.running = true
-            self.startDSPLoop()
+            self.startDSPLoop(intervalMs: Self.activeTickMs)
         }
         if DispatchQueue.getSpecific(key: Self.dspQueueKey) != nil {
             work()
@@ -167,6 +190,10 @@ final class AudioEngineManager: @unchecked Sendable {
         let work = { [weak self] in
             guard let self else { return }
             self.running = false
+            if self.analysisPhase == .analyzing {
+                self.onActivity?(false)
+            }
+            self.analysisPhase = .idle
             self.spectrumGeneration += 1
             self.dspTimer?.cancel()
             self.dspTimer = nil
@@ -193,10 +220,11 @@ final class AudioEngineManager: @unchecked Sendable {
         return value
     }
 
-    private func startDSPLoop() {
+    private func startDSPLoop(intervalMs: Int) {
         dspTimer?.cancel()
         let timer = DispatchSource.makeTimerSource(queue: dspQueue)
-        timer.schedule(deadline: .now(), repeating: .milliseconds(3), leeway: .milliseconds(1))
+        let leeway = max(1, intervalMs / 5)
+        timer.schedule(deadline: .now(), repeating: .milliseconds(intervalMs), leeway: .milliseconds(leeway))
         timer.setEventHandler { [weak self] in
             self?.tick()
         }
@@ -207,21 +235,50 @@ final class AudioEngineManager: @unchecked Sendable {
     private func tick() {
         guard running else { return }
         var hops = 0
+        var heardAudio = false
         while running, hops < 8 {
             let hop = max(processor.hopSize, 64)
             let available = ringBuffer.availableToRead
             guard available >= hop else { break }
-            processAvailable(hop: hop)
+            if processAvailable(hop: hop) {
+                heardAudio = true
+            }
             hops += 1
+        }
+
+        let now = DispatchTime.now().uptimeNanoseconds
+        if heardAudio {
+            lastAudibleNanos = now
+        } else {
+            let reference = lastAudibleNanos == 0 ? captureStartedNanos : lastAudibleNanos
+            if now &- reference >= Self.silenceHoldNanos {
+                enterDecayIfNeeded()
+            }
+        }
+
+        if analysisPhase == .decaying {
+            publishDecayFrame()
         }
     }
 
-    private func processAvailable(hop: Int) {
+    /// Returns true when the hop contained audible energy.
+    @discardableResult
+    private func processAvailable(hop: Int) -> Bool {
         ensureReadCapacity(hop)
         let count = ringBuffer.read(into: readScratch, count: hop)
-        guard count > 0 else { return }
+        guard count > 0 else { return false }
 
+        let hopPeak = peakMagnitude(count: count)
+        let audible = hopPeak >= Self.audiblePeak
         let meters = bufferProcessor.consumeMeters()
+
+        if !audible {
+            return false
+        }
+        if analysisPhase != .analyzing {
+            enterAnalyzing()
+        }
+
         let peakDB = DecibelCalculator.amplitudeToDB(meters.peak, floorDB: configuration.minimumDB)
         let rmsDB = DecibelCalculator.amplitudeToDB(meters.rms, floorDB: configuration.minimumDB)
         let snapshot = processor.push(
@@ -231,15 +288,79 @@ final class AudioEngineManager: @unchecked Sendable {
             isClipping: meters.clipping
         )
 
-        guard let snapshot else { return }
+        guard let snapshot else { return true }
 
         let now = snapshot.timestamp
         let minInterval = UInt64(1_000_000_000 / max(configuration.targetFrameRate, 15))
         if now &- lastUIPush >= minInterval || lastUIPush == 0 {
             lastUIPush = now
             let generation = dspLoopGeneration
-            guard generation == spectrumGeneration else { return }
+            guard generation == spectrumGeneration else { return true }
             onSpectrum?(snapshot.withGeneration(generation))
+        }
+        return true
+    }
+
+    private func peakMagnitude(count: Int) -> Float {
+        var peak: Float = 0
+        let samples = readScratch
+        for index in 0..<count {
+            let magnitude = abs(samples[index])
+            if magnitude > peak {
+                peak = magnitude
+            }
+        }
+        return peak
+    }
+
+    private func enterAnalyzing() {
+        let previous = analysisPhase
+        guard previous != .analyzing else { return }
+        analysisPhase = .analyzing
+        if previous != .decaying {
+            processor.reset()
+        } else {
+            processor.resetTimeWindow()
+        }
+        lastUIPush = 0
+        startDSPLoop(intervalMs: Self.activeTickMs)
+        onActivity?(true)
+    }
+
+    private func enterDecayIfNeeded() {
+        guard analysisPhase == .analyzing else { return }
+        analysisPhase = .decaying
+        processor.resetTimeWindow()
+        lastUIPush = 0
+        startDSPLoop(intervalMs: decayTickMs)
+        onActivity?(false)
+    }
+
+    private func enterIdle() {
+        guard analysisPhase != .idle else { return }
+        if analysisPhase == .analyzing {
+            onActivity?(false)
+        }
+        analysisPhase = .idle
+        startDSPLoop(intervalMs: Self.idleTickMs)
+    }
+
+    private var decayTickMs: Int {
+        max(8, 1_000 / max(configuration.targetFrameRate, 15))
+    }
+
+    private func publishDecayFrame() {
+        let now = DispatchTime.now().uptimeNanoseconds
+        let minInterval = UInt64(1_000_000_000 / max(configuration.targetFrameRate, 15))
+        guard now &- lastUIPush >= minInterval || lastUIPush == 0 else { return }
+
+        let decayed = processor.decayTowardSilence()
+        lastUIPush = now
+        let generation = dspLoopGeneration
+        guard generation == spectrumGeneration else { return }
+        onSpectrum?(decayed.data.withGeneration(generation))
+        if decayed.settled {
+            enterIdle()
         }
     }
 

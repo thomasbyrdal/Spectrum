@@ -38,6 +38,21 @@ final class SpectrumSourceSwitchingTests: XCTestCase {
         )
     }
 
+    func testAudibleTestSignalReportsActivity() async throws {
+        let engine = AudioEngineManager(configuration: SpectrumConfiguration())
+        let activity = ActivityProbe()
+        engine.setActivityHandler { activity.set($0) }
+        defer { engine.stop() }
+
+        try await engine.start(source: .testSignal(.sine1k))
+        let analyzing = await waitUntil(timeout: 2.0) { activity.latest == true }
+        XCTAssertTrue(analyzing, "Audible test signal never moved activity to Running.")
+
+        engine.stop()
+        let idle = await waitUntil(timeout: 2.0) { activity.latest == false }
+        XCTAssertTrue(idle, "Stopping capture never moved activity to Stopped.")
+    }
+
     func testFailedPhysicalStartDoesNotLeaveTheTestSignalRunning() async throws {
         let engine = AudioEngineManager(configuration: SpectrumConfiguration())
         defer { engine.stop() }
@@ -76,6 +91,23 @@ final class SpectrumSourceSwitchingTests: XCTestCase {
             try? await Task.sleep(for: .milliseconds(20))
         }
         return condition()
+    }
+}
+
+private final class ActivityProbe: @unchecked Sendable {
+    private let lock = NSLock()
+    private var value: Bool?
+
+    func set(_ next: Bool) {
+        lock.lock()
+        value = next
+        lock.unlock()
+    }
+
+    var latest: Bool? {
+        lock.lock()
+        defer { lock.unlock() }
+        return value
     }
 }
 

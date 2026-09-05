@@ -94,9 +94,37 @@ final class SpectrumProcessor: @unchecked Sendable {
     }
 
     func reset() {
+        resetTimeWindow()
+        smoother.reset(barCount: configuration.barCount, floorDB: configuration.minimumDB)
+    }
+
+    func resetTimeWindow() {
         timeBuffer = [Float](repeating: 0, count: configuration.fftSize)
         filled = 0
-        smoother.reset(barCount: configuration.barCount, floorDB: configuration.minimumDB)
+    }
+
+    /// Publishes one silence frame: live bars clear immediately, peak holds keep falling.
+    func decayTowardSilence() -> (data: SpectrumData, settled: Bool) {
+        let timestamp = machAbsoluteNanoseconds()
+        let floor = configuration.minimumDB
+        let decayed = smoother.decayTowardFloor(
+            timestamp: timestamp,
+            floorDB: floor,
+            enablePeakHold: configuration.peakHoldEnabled
+        )
+        let data = SpectrumData(
+            frequencies: mapper.centerFrequencies(),
+            magnitudesDB: decayed.levels,
+            peakMagnitudesDB: decayed.peaks,
+            timestamp: timestamp,
+            peakDBFS: floor,
+            rmsDBFS: floor,
+            isClipping: false,
+            sampleRate: sampleRate,
+            nyquist: mapper.nyquist,
+            generation: 0
+        )
+        return (data, decayed.settled)
     }
 
     /// Appends PCM, returning a spectrum snapshot once a hop has been accumulated.

@@ -53,8 +53,14 @@ final class SpectrumViewModel {
                 if abs(self.sampleRate - data.sampleRate) > 0.5 {
                     self.sampleRate = data.sampleRate
                 }
-                if !self.isRunning {
-                    self.isRunning = true
+            }
+        }
+        engine.setActivityHandler { [weak self] analyzing in
+            Task { @MainActor in
+                guard let self else { return }
+                self.isRunning = analyzing
+                if !analyzing {
+                    self.resetDisplayFrameRate()
                 }
             }
         }
@@ -206,7 +212,7 @@ final class SpectrumViewModel {
             acceptedGeneration = engine.currentSpectrumGeneration
             sampleRate = engine.currentSampleRate
             channelCount = engine.currentChannelCount
-            isRunning = true
+            // Running/Stopped follows audible input, not merely that capture started.
         } catch is CancellationError {
             return
         } catch let error as AudioCaptureError {
