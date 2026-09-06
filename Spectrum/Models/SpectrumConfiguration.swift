@@ -83,6 +83,7 @@ enum BarStyle: String, CaseIterable, Identifiable, Sendable {
     case blueGradient = "Blue gradient"
     case greenGradient = "Green gradient"
     case redGradient = "Red gradient"
+    case heat = "Heat"
 
     var id: String { rawValue }
 }
@@ -100,6 +101,20 @@ enum PeakHoldMode: String, CaseIterable, Identifiable, Sendable {
     case rect = "Rect"
 
     var id: String { rawValue }
+}
+
+enum StereoSpectrumLayout: String, CaseIterable, Identifiable, Sendable {
+    case sideBySide
+    case stacked
+
+    var id: String { rawValue }
+
+    var label: String {
+        switch self {
+        case .sideBySide: return "Left | Right"
+        case .stacked: return "Right over left"
+        }
+    }
 }
 
 struct SpectrumConfiguration: Equatable, Sendable {
@@ -122,6 +137,8 @@ struct SpectrumConfiguration: Equatable, Sendable {
     var peakDecayDBPerSecond: Float = 28
     var barStyle: BarStyle = .gradient
     var showGrid: Bool = true
+    var barGlowEnabled: Bool = true
+    var barReflectionEnabled: Bool = false
     var minimumMagnitude: Float = 1.0e-12
 
     var peakHoldMode: PeakHoldMode {

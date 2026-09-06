@@ -12,6 +12,9 @@ struct SpectrumApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView(viewModel: viewModel)
+                .onAppear {
+                    AlwaysOnTopSupport.install(viewModel: viewModel)
+                }
         }
         .defaultSize(width: 1120, height: 720)
         .windowResizability(.contentMinSize)
@@ -21,6 +24,10 @@ struct SpectrumApp: App {
                 Button("About Spectrum") {
                     AboutPanel.present()
                 }
+            }
+            CommandGroup(after: .windowArrangement) {
+                Toggle("Always on Top", isOn: $viewModel.alwaysOnTop)
+                    .keyboardShortcut("t", modifiers: [.command, .shift])
             }
             CommandGroup(replacing: .help) {
                 Button("Spectrum Help") {
@@ -50,6 +57,63 @@ struct SpectrumApp: App {
 }
 
 @MainActor
+enum AlwaysOnTopSupport {
+    private static var viewModel: SpectrumViewModel?
+    private static var observer: NSObjectProtocol?
+    private static weak var mainWindow: NSWindow?
+
+    static func install(viewModel: SpectrumViewModel) {
+        self.viewModel = viewModel
+        guard observer == nil else { return }
+        observer = NotificationCenter.default.addObserver(
+            forName: NSWindow.didBecomeKeyNotification,
+            object: nil,
+            queue: .main
+        ) { notification in
+            guard let window = notification.object as? NSWindow else { return }
+            Task { @MainActor in
+                disableIfAuxiliaryWindow(window)
+            }
+        }
+    }
+
+    static func registerMainWindow(_ window: NSWindow) {
+        mainWindow = window
+    }
+
+    static func disableIfNeeded() {
+        guard let viewModel, viewModel.alwaysOnTop else { return }
+        viewModel.alwaysOnTop = false
+        lowerFloatingWindows()
+    }
+
+    private static func disableIfAuxiliaryWindow(_ window: NSWindow) {
+        guard isAuxiliaryDialog(window) else { return }
+        disableIfNeeded()
+        window.makeKeyAndOrderFront(nil)
+    }
+
+    private static func isAuxiliaryDialog(_ window: NSWindow) -> Bool {
+        guard window.isVisible, window.styleMask.contains(.titled) else { return false }
+        if let mainWindow {
+            return window !== mainWindow
+        }
+        switch window.title {
+        case "About Spectrum", "Spectrum Help", "Settings":
+            return true
+        default:
+            return window.identifier?.rawValue.localizedCaseInsensitiveContains("settings") == true
+        }
+    }
+
+    private static func lowerFloatingWindows() {
+        for window in NSApp.windows where window.level == .floating {
+            window.level = .normal
+        }
+    }
+}
+
+@MainActor
 enum AboutPanel {
     static let copyright = "© Thomas Byrdal, 2026. www.byrdal.dk/spectrum"
 
@@ -57,6 +121,7 @@ enum AboutPanel {
     private static var coordinator: AboutWindowCoordinator?
 
     static func present() {
+        AlwaysOnTopSupport.disableIfNeeded()
         let about = existingWindow()
         if about.isVisible {
             return

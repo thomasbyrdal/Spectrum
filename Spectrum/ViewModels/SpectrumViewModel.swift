@@ -21,6 +21,16 @@ final class SpectrumViewModel {
             engine.setShowStereoSpectrum(showStereoSpectrum)
         }
     }
+    var alwaysOnTop: Bool {
+        didSet {
+            UserDefaults.standard.set(alwaysOnTop, forKey: Self.alwaysOnTopKey)
+        }
+    }
+    var stereoSpectrumLayout: StereoSpectrumLayout {
+        didSet {
+            UserDefaults.standard.set(stereoSpectrumLayout.rawValue, forKey: Self.stereoLayoutKey)
+        }
+    }
     var disconnectedMessage: String?
 
     var stereoSpectrumAvailable: Bool { channelCount >= 2 }
@@ -44,6 +54,8 @@ final class SpectrumViewModel {
     private var displayFrameTimes: [CFAbsoluteTime] = []
 
     private static let stereoPreferenceKey = "showStereoSpectrum"
+    private static let alwaysOnTopKey = "alwaysOnTop"
+    private static let stereoLayoutKey = "stereoSpectrumLayout"
 
     init() {
         let initial = SpectrumConfiguration()
@@ -52,6 +64,13 @@ final class SpectrumViewModel {
         self.engine = engine
         self.devices = AudioDeviceViewModel(manager: engine.deviceManager)
         self.showStereoSpectrum = UserDefaults.standard.bool(forKey: Self.stereoPreferenceKey)
+        self.alwaysOnTop = UserDefaults.standard.bool(forKey: Self.alwaysOnTopKey)
+        if let raw = UserDefaults.standard.string(forKey: Self.stereoLayoutKey),
+           let layout = StereoSpectrumLayout(rawValue: raw) {
+            self.stereoSpectrumLayout = layout
+        } else {
+            self.stereoSpectrumLayout = .sideBySide
+        }
         self.spectrum = SpectrumData.empty(
             barCount: initial.barCount,
             sampleRate: 48_000,

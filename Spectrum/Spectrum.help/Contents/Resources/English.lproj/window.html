@@ -39,14 +39,14 @@
             <tr><td>Bars</td><td>Number of frequency bars (32–1024)</td></tr>
             <tr><td>FFT</td><td>Transform size; larger values give finer frequency resolution</td></tr>
             <tr><td>Window</td><td>Hann, Blackman-Harris, or Rectangular window on each FFT frame</td></tr>
-            <tr><td>Style</td><td>Bar colors: solid, rainbow gradient, or blue / green / red gradients</td></tr>
+            <tr><td>Style</td><td>Bar colors: solid, rainbow gradient, blue / green / red gradients, or heat by level</td></tr>
             <tr><td>Peak</td><td>Peak hold off, a bar marker, or a darker rectangle above the live bar</td></tr>
         </tbody>
     </table>
     <p>The range chip on the right shows the displayed frequency span. If the source sample rate cannot reach your configured maximum, <strong>Nyquist limited</strong> appears. Spectrum never invents energy above half the sample rate.</p>
-    <p>When the selected source has two channels, a <strong>Show stereo spectrum</strong> switch appears to the left of the range chip. Turn it on to replace the mixed plot with two side-by-side analyzers: left channel on the left, right channel on the right. Turn it off to mix both channels into one spectrum again.</p>
+    <p>When the selected source has two channels, a <strong>Show stereo spectrum</strong> switch appears to the left of the range chip. Turn it on to replace the mixed plot with two analyzers. The default arrangement is left channel on the left and right channel on the right. Choose <strong>Settings &gt; Appearance &gt; Layout</strong> to stack them instead (right channel on top, left channel on the bottom). Turn the switch off to mix both channels into one spectrum again.</p>
     <p>If a permission or device error occurs, a message and buttons appear on the second row of the control bar.</p>
-    <p>When Input is Music or Spotify, the header (left of Running) shows the current <strong>song by artist</strong> and Play, Stop, Next, and Previous. If the song and artist do not fit, the text slowly scrolls left and right with a pause at each end. The window title is <strong>Spectrum - Spotify playing song by artist</strong> or <strong>Spectrum - Apple Music playing song by artist</strong>. The header and the window title both update when the song or artist changes. macOS may ask for Automation permission the first time those controls are used.</p>
+    <p>When Input is Music or Spotify, the header (left of Running) shows the current <strong>song by artist</strong>, album artwork when available, and Play, Stop, Next, and Previous. If the song and artist do not fit, the text slowly scrolls left and right with a pause at each end. The window title is <strong>Spectrum - Spotify playing song by artist</strong> or <strong>Spectrum - Apple Music playing song by artist</strong>. The header and the window title both update when the song or artist changes. macOS may ask for Automation permission the first time those controls are used.</p>
 
     <h2>Plot</h2>
     <p>Frequency is logarithmic from left (low) to right (high). Level is in dBFS from the bottom of the dB range to the top. Optional grid lines and peak-hold graphics overlay the bars. Details are in <a href="analyzer.html">Analyzer settings</a> and <a href="appearance.html">Appearance</a>.</p>
@@ -54,6 +54,12 @@
     <h2>Status bar</h2>
     <p>From the left: current input name, sample rate, channel count, FFT size, frequency resolution (sample rate ÷ FFT size), CPU use of this process, and the actual display <strong>FPS</strong> (how often the plot accepted a new frame over the last second). Analysis is mixed to one spectrum unless <strong>Show stereo spectrum</strong> is on.</p>
     <p>On the right, input meters show peak and RMS as 12-segment LED bars (five green, five yellow, two red) in dBFS.</p>
+
+    <h2>When Spectrum is in the background</h2>
+    <p>If another app is in front, Spectrum hides the header, menus, meters, song title, artwork, and title bar so only the plot stays visible. Click the plot to bring Spectrum forward and restore the full window.</p>
+
+    <h2>Always on Top</h2>
+    <p>Choose <strong>Window &gt; Always on Top</strong> (Shift-Command-T) to keep Spectrum above other windows. The choice is remembered the next time you open the app. Opening another Spectrum window — <strong>Settings</strong>, <strong>About Spectrum</strong>, or <strong>Help</strong> — turns Always on Top off so that window is not hidden behind the plot. Turn it on again from the Window menu if you still want it. Background plot-only display still applies when Spectrum is not the frontmost window.</p>
 
     <h2>Settings and About</h2>
     <p>Choose <strong>Spectrum &gt; Settings…</strong> for Audio, Spectrum, Appearance, and Performance tabs. <strong>Spectrum &gt; About Spectrum</strong> shows the application icon and copyright.</p>

@@ -44,6 +44,7 @@ private final class HelpWindow: NSObject, WKNavigationDelegate {
     private var helpRoot: URL?
 
     func show(page: String, fragment: String?) {
+        AlwaysOnTopSupport.disableIfNeeded()
         if window == nil {
             makeWindow()
         }

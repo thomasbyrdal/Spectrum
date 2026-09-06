@@ -1,3 +1,4 @@
+import AppKit
 import Foundation
 import Observation
 import OSLog
@@ -52,6 +53,7 @@ final class NowPlayingController {
     private(set) var isAvailable = false
     private(set) var needsAutomationPermission = false
     private(set) var sourceDisplayName: String?
+    private(set) var artworkImage: NSImage?
 
     var displayTitle: String {
         if !isAvailable { return "" }
@@ -87,6 +89,7 @@ final class NowPlayingController {
     private var target: NowPlayingTarget?
     private var pollTask: Task<Void, Never>?
     private var attachToken = 0
+    private var artworkKey = ""
 
     nonisolated static func supports(bundleID: String?) -> Bool {
         NowPlayingTarget(bundleID: bundleID) != nil
@@ -123,6 +126,8 @@ final class NowPlayingController {
         artist = ""
         isPlaying = false
         needsAutomationPermission = false
+        artworkImage = nil
+        artworkKey = ""
     }
 
     func play() { send(.play) }
@@ -229,7 +234,92 @@ final class NowPlayingController {
             title = ""
             artist = ""
             isPlaying = false
+            artworkImage = nil
+            artworkKey = ""
         }
+        refreshArtworkIfNeeded()
+    }
+
+    private func refreshArtworkIfNeeded() {
+        guard let target, !title.isEmpty else {
+            artworkImage = nil
+            artworkKey = ""
+            return
+        }
+        let key = "\(target.rawValue)|\(title)|\(artist)"
+        guard key != artworkKey else { return }
+        artworkKey = key
+        let token = attachToken
+        let expectedKey = key
+        Task { [weak self] in
+            let image = await Self.loadArtwork(for: target)
+            guard let self, token == self.attachToken, self.artworkKey == expectedKey else { return }
+            self.artworkImage = image
+        }
+    }
+
+    nonisolated private static func loadArtwork(for target: NowPlayingTarget) async -> NSImage? {
+        await Task.detached(priority: .utility) {
+            switch target {
+            case .music:
+                return loadMusicArtwork()
+            case .spotify:
+                return loadSpotifyArtwork()
+            }
+        }.value
+    }
+
+    nonisolated private static func loadMusicArtwork() -> NSImage? {
+        let dest = FileManager.default.temporaryDirectory
+            .appendingPathComponent("dk.byrdal.Spectrum.art.\(UUID().uuidString).img")
+        let posix = dest.path
+            .replacingOccurrences(of: "\\", with: "\\\\")
+            .replacingOccurrences(of: "\"", with: "\\\"")
+        let script = """
+        tell application "Music"
+            try
+                if (count of artworks of current track) is 0 then return ""
+                set d to raw data of artwork 1 of current track
+            on error
+                return ""
+            end try
+        end tell
+        try
+            set f to open for access POSIX file "\(posix)" with write permission
+            set eof f to 0
+            write d to f
+            close access f
+            return "\(posix)"
+        on error
+            try
+                close access POSIX file "\(posix)"
+            end try
+            return ""
+        end try
+        """
+        let path = AppleScriptRunner.run(script)
+        defer { try? FileManager.default.removeItem(at: dest) }
+        guard !path.isEmpty, !path.lowercased().hasPrefix("error") else { return nil }
+        return NSImage(contentsOf: URL(fileURLWithPath: path))
+    }
+
+    nonisolated private static func loadSpotifyArtwork() -> NSImage? {
+        let script = """
+        tell application "Spotify"
+            try
+                return artwork url of current track
+            on error errMsg number errNum
+                return "error|" & errNum & "|" & errMsg
+            end try
+        end tell
+        """
+        let raw = AppleScriptRunner.run(script)
+        let urlString = raw.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !urlString.isEmpty, !urlString.lowercased().hasPrefix("error"),
+              let url = URL(string: urlString)
+        else { return nil }
+        guard let data = try? Data(contentsOf: url) else { return nil }
+        return NSImage(data: data)
     }
 
     private static func statusScript(for target: NowPlayingTarget) -> String {

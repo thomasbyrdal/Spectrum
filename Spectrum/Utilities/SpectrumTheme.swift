@@ -19,12 +19,15 @@ enum SpectrumTheme {
     static let meterLEDYellow = Color(red: 1.0, green: 0.84, blue: 0.10)
     static let meterLEDRed = Color(red: 1.0, green: 0.16, blue: 0.14)
 
-    static func barColor(normalizedFrequency: Double, style: BarStyle) -> Color {
+    static func barColor(
+        normalizedFrequency: Double,
+        normalizedLevel: Double = 0,
+        style: BarStyle
+    ) -> Color {
         switch style {
         case .solid:
             return barFill
         case .gradient:
-            // Cool (low) → green/yellow (mid) → warm (high).
             let hue = 0.55 - normalizedFrequency * 0.52
             return Color(hue: hue, saturation: 0.85, brightness: 0.95)
         case .blueGradient:
@@ -36,10 +39,16 @@ enum SpectrumTheme {
         case .redGradient:
             let hue = (0.98 + normalizedFrequency * 0.08).truncatingRemainder(dividingBy: 1)
             return Color(hue: hue, saturation: 0.88, brightness: 0.52 + 0.43 * normalizedFrequency)
+        case .heat:
+            return heatColor(normalizedLevel: normalizedLevel)
         }
     }
 
-    static func peakHoldRectColor(normalizedFrequency: Double, style: BarStyle) -> Color {
+    static func peakHoldRectColor(
+        normalizedFrequency: Double,
+        normalizedLevel: Double = 0,
+        style: BarStyle
+    ) -> Color {
         switch style {
         case .solid:
             return Color(red: 0.10, green: 0.38, blue: 0.32)
@@ -55,13 +64,36 @@ enum SpectrumTheme {
         case .redGradient:
             let hue = (0.98 + normalizedFrequency * 0.08).truncatingRemainder(dividingBy: 1)
             return Color(hue: hue, saturation: 0.85, brightness: 0.30)
+        case .heat:
+            return heatColor(normalizedLevel: normalizedLevel, brightness: 0.32)
         }
     }
 
-    static func barShading(normalizedFrequency: Double, style: BarStyle, in rect: CGRect) -> GraphicsContext.Shading {
-        let top = barColor(normalizedFrequency: normalizedFrequency, style: style)
+    static func barGlowColor(
+        normalizedFrequency: Double,
+        normalizedLevel: Double,
+        style: BarStyle
+    ) -> Color {
+        barColor(
+            normalizedFrequency: normalizedFrequency,
+            normalizedLevel: normalizedLevel,
+            style: style
+        )
+    }
+
+    static func barShading(
+        normalizedFrequency: Double,
+        normalizedLevel: Double = 0,
+        style: BarStyle,
+        in rect: CGRect
+    ) -> GraphicsContext.Shading {
+        let top = barColor(
+            normalizedFrequency: normalizedFrequency,
+            normalizedLevel: normalizedLevel,
+            style: style
+        )
         switch style {
-        case .solid, .gradient:
+        case .solid, .gradient, .heat:
             return .color(top.opacity(0.92))
         case .blueGradient:
             return verticalGradient(
@@ -82,6 +114,14 @@ enum SpectrumTheme {
                 top: top
             )
         }
+    }
+
+    static func heatColor(normalizedLevel: Double, brightness: Double = 0.95) -> Color {
+        let t = min(max(normalizedLevel, 0), 1)
+        let hue = 0.66 - t * 0.66
+        let sat = 0.78 + 0.12 * t
+        let bright = min(max(brightness * (0.55 + 0.45 * t), 0.15), 1)
+        return Color(hue: hue, saturation: sat, brightness: bright)
     }
 
     private static func verticalGradient(in rect: CGRect, bottom: Color, top: Color) -> GraphicsContext.Shading {

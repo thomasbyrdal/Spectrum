@@ -1,32 +1,50 @@
+import AppKit
 import SwiftUI
 
 struct ContentView: View {
     @Bindable var viewModel: SpectrumViewModel
+    @State private var isKeyWindow = true
 
     private let headerHeight: CGFloat = 52
     private let controlBarHeight: CGFloat = 86
     private let statusHeight: CGFloat = 72
 
+    private var showChrome: Bool {
+        isKeyWindow
+    }
+
     var body: some View {
         VStack(spacing: 0) {
-            header
-                .frame(height: headerHeight)
-            ControlBarView(viewModel: viewModel)
-                .frame(height: controlBarHeight)
+            if showChrome {
+                header
+                    .frame(height: headerHeight)
+                ControlBarView(viewModel: viewModel)
+                    .frame(height: controlBarHeight)
+            }
             SpectrumDisplayView(
                 left: viewModel.spectrum,
                 right: viewModel.displaysStereoSpectrum ? viewModel.spectrumRight : nil,
-                configuration: viewModel.configuration
+                configuration: viewModel.configuration,
+                layout: viewModel.stereoSpectrumLayout
             )
             .equatable()
             .frame(maxWidth: .infinity, maxHeight: .infinity)
             .layoutPriority(1)
-            StatusView(viewModel: viewModel)
-                .frame(height: statusHeight)
+            if showChrome {
+                StatusView(viewModel: viewModel)
+                    .frame(height: statusHeight)
+            }
         }
         .background(SpectrumTheme.background)
         .frame(minWidth: 1080, minHeight: 540)
         .background(WindowTitleSync(title: viewModel.nowPlaying.windowTitle))
+        .background(
+            WindowAlwaysOnTopSync(
+                enabled: viewModel.alwaysOnTop,
+                isKeyWindow: $isKeyWindow,
+                hideChrome: !showChrome
+            )
+        )
         .onAppear { viewModel.start() }
         .onDisappear { viewModel.stop() }
     }
@@ -42,6 +60,9 @@ struct ContentView: View {
             Spacer(minLength: 12)
             if viewModel.nowPlaying.isAvailable {
                 MarqueeText(text: viewModel.nowPlaying.displayTitle)
+                if let artwork = viewModel.nowPlaying.artworkImage {
+                    AlbumArtChip(image: artwork)
+                }
                 NowPlayingTransportButtons(controller: viewModel.nowPlaying)
             }
             HStack(spacing: 8) {
@@ -65,6 +86,24 @@ struct ContentView: View {
                 .fill(SpectrumTheme.panelStroke)
                 .frame(height: 1)
         }
+    }
+}
+
+private struct AlbumArtChip: View {
+    let image: NSImage
+
+    var body: some View {
+        Image(nsImage: image)
+            .resizable()
+            .interpolation(.high)
+            .aspectRatio(contentMode: .fill)
+            .frame(width: 22, height: 22)
+            .clipShape(RoundedRectangle(cornerRadius: 4, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    .stroke(Color.white.opacity(0.18), lineWidth: 0.8)
+            }
+            .accessibilityHidden(true)
     }
 }
 
@@ -98,6 +137,98 @@ struct NowPlayingTransportButtons: View {
         }
         .help(label)
         .accessibilityLabel(label)
+    }
+}
+
+private struct WindowAlwaysOnTopSync: NSViewRepresentable {
+    let enabled: Bool
+    @Binding var isKeyWindow: Bool
+    let hideChrome: Bool
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView(frame: .zero)
+        view.isHidden = true
+        context.coordinator.install(isKeyWindow: $isKeyWindow)
+        return view
+    }
+
+    func updateNSView(_ nsView: NSView, context: Context) {
+        context.coordinator.isKeyWindow = $isKeyWindow
+        context.coordinator.window = nsView.window
+        DispatchQueue.main.async {
+            guard let window = nsView.window else { return }
+            context.coordinator.window = window
+            AlwaysOnTopSupport.registerMainWindow(window)
+            window.level = enabled ? .floating : .normal
+            context.coordinator.applyHUD(window, hideChrome: hideChrome)
+            let key = window.isKeyWindow
+            if isKeyWindow != key {
+                isKeyWindow = key
+            }
+        }
+    }
+
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) {
+        coordinator.teardown()
+        if let window = nsView.window {
+            coordinator.applyHUD(window, hideChrome: false)
+            window.level = .normal
+        }
+    }
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator()
+    }
+
+    final class Coordinator {
+        var isKeyWindow: Binding<Bool> = .constant(true)
+        weak var window: NSWindow?
+        private var observers: [NSObjectProtocol] = []
+
+        func install(isKeyWindow: Binding<Bool>) {
+            self.isKeyWindow = isKeyWindow
+            guard observers.isEmpty else { return }
+            let center = NotificationCenter.default
+            observers.append(center.addObserver(forName: NSWindow.didBecomeKeyNotification, object: nil, queue: .main) { [weak self] notification in
+                self?.handleKeyChange(notification, isKey: true)
+            })
+            observers.append(center.addObserver(forName: NSWindow.didResignKeyNotification, object: nil, queue: .main) { [weak self] notification in
+                self?.handleKeyChange(notification, isKey: false)
+            })
+        }
+
+        private func handleKeyChange(_ notification: Notification, isKey: Bool) {
+            guard let window = notification.object as? NSWindow else { return }
+            guard window === self.window else { return }
+            isKeyWindow.wrappedValue = isKey
+        }
+
+        func applyHUD(_ window: NSWindow, hideChrome: Bool) {
+            if hideChrome {
+                window.titleVisibility = .hidden
+                window.titlebarAppearsTransparent = true
+                if !window.styleMask.contains(.fullSizeContentView) {
+                    window.styleMask.insert(.fullSizeContentView)
+                }
+                window.standardWindowButton(.closeButton)?.isHidden = true
+                window.standardWindowButton(.miniaturizeButton)?.isHidden = true
+                window.standardWindowButton(.zoomButton)?.isHidden = true
+            } else {
+                window.titleVisibility = .visible
+                window.titlebarAppearsTransparent = false
+                window.styleMask.remove(.fullSizeContentView)
+                window.standardWindowButton(.closeButton)?.isHidden = false
+                window.standardWindowButton(.miniaturizeButton)?.isHidden = false
+                window.standardWindowButton(.zoomButton)?.isHidden = false
+            }
+        }
+
+        func teardown() {
+            for observer in observers {
+                NotificationCenter.default.removeObserver(observer)
+            }
+            observers.removeAll()
+        }
     }
 }
 

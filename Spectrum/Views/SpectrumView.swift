@@ -4,19 +4,33 @@ struct SpectrumDisplayView: View, Equatable {
     let left: SpectrumData
     let right: SpectrumData?
     let configuration: SpectrumConfiguration
+    var layout: StereoSpectrumLayout = .sideBySide
 
     var body: some View {
         if let right {
-            HStack(spacing: 0) {
-                SpectrumView(data: left, configuration: configuration, channelLabel: "L")
-                Rectangle()
-                    .fill(SpectrumTheme.panelStroke)
-                    .frame(width: 1)
-                SpectrumView(data: right, configuration: configuration, channelLabel: "R")
+            switch layout {
+            case .sideBySide:
+                HStack(spacing: 0) {
+                    SpectrumView(data: left, configuration: configuration, channelLabel: "L")
+                    stereoDivider(vertical: true)
+                    SpectrumView(data: right, configuration: configuration, channelLabel: "R")
+                }
+            case .stacked:
+                VStack(spacing: 0) {
+                    SpectrumView(data: right, configuration: configuration, channelLabel: "R")
+                    stereoDivider(vertical: false)
+                    SpectrumView(data: left, configuration: configuration, channelLabel: "L")
+                }
             }
         } else {
             SpectrumView(data: left, configuration: configuration)
         }
+    }
+
+    private func stereoDivider(vertical: Bool) -> some View {
+        Rectangle()
+            .fill(SpectrumTheme.panelStroke)
+            .frame(width: vertical ? 1 : nil, height: vertical ? nil : 1)
     }
 }
 
@@ -57,6 +71,18 @@ struct SpectrumView: View, Equatable {
 
     private func plotRect(in size: CGSize) -> CGRect {
         CGRect(x: 56, y: 16, width: max(size.width - 72, 10), height: max(size.height - 48, 10))
+    }
+
+    private func barPlot(in plot: CGRect) -> CGRect {
+        guard configuration.barReflectionEnabled else { return plot }
+        return CGRect(x: plot.minX, y: plot.minY, width: plot.width, height: max(plot.height - 16, 10))
+    }
+
+    private func normalizedLevel(_ db: Float) -> Double {
+        let minDB = configuration.minimumDB
+        let maxDB = configuration.maximumDB
+        let clamped = min(max(db, minDB), maxDB)
+        return Double((clamped - minDB) / max(maxDB - minDB, 1))
     }
 
     private var displayMin: Float { configuration.minimumFrequency }
@@ -100,20 +126,32 @@ struct SpectrumView: View, Equatable {
     private func drawBars(context: GraphicsContext, plot: CGRect) {
         let count = data.magnitudesDB.count
         guard count > 0 else { return }
-        let slot = plot.width / CGFloat(count)
+        let bars = barPlot(in: plot)
+        let slot = bars.width / CGFloat(count)
         let gap: CGFloat = slot > 3 ? min(1.0, slot * 0.22) : 0
         let barWidth = max(slot - gap, 0.5)
 
         for index in 0..<count {
             let t = Double(index) / Double(max(count - 1, 1))
             let db = data.magnitudesDB[index]
-            let height = barHeight(db: db, plot: plot)
-            let x = plot.minX + CGFloat(index) * slot + gap / 2
-            let y = plot.maxY - height
+            let level = normalizedLevel(db)
+            let height = barHeight(db: db, plot: bars)
+            let x = bars.minX + CGFloat(index) * slot + gap / 2
+            let y = bars.maxY - height
             let rect = CGRect(x: x, y: y, width: barWidth, height: max(height, 1))
             let corner = min(barWidth / 4, 1.5)
             let peakEnabled = configuration.peakHoldEnabled && index < data.peakMagnitudesDB.count
             let peakDB = peakEnabled ? data.peakMagnitudesDB[index] : 0
+
+            if configuration.barGlowEnabled {
+                drawBarGlow(
+                    context: context,
+                    rect: rect,
+                    corner: corner,
+                    normalizedFrequency: t,
+                    normalizedLevel: level
+                )
+            }
 
             if peakEnabled, configuration.peakHoldStyle == .rect {
                 drawPeakHoldRect(
@@ -123,20 +161,86 @@ struct SpectrumView: View, Equatable {
                     barWidth: barWidth,
                     corner: corner,
                     peakDB: peakDB,
-                    plot: plot,
+                    plot: bars,
                     normalizedFrequency: t
                 )
             }
 
             context.fill(
                 Path(roundedRect: rect, cornerRadius: corner),
-                with: SpectrumTheme.barShading(normalizedFrequency: t, style: configuration.barStyle, in: rect)
+                with: SpectrumTheme.barShading(
+                    normalizedFrequency: t,
+                    normalizedLevel: level,
+                    style: configuration.barStyle,
+                    in: rect
+                )
             )
 
+            if configuration.barReflectionEnabled {
+                drawBarReflection(
+                    context: context,
+                    x: x,
+                    barWidth: barWidth,
+                    height: height,
+                    corner: corner,
+                    baseline: bars.maxY,
+                    floorY: plot.maxY,
+                    normalizedFrequency: t,
+                    normalizedLevel: level
+                )
+            }
+
             if peakEnabled, configuration.peakHoldStyle == .bar {
-                drawPeakHoldBar(context: context, x: x, barWidth: barWidth, peakDB: peakDB, plot: plot)
+                drawPeakHoldBar(context: context, x: x, barWidth: barWidth, peakDB: peakDB, plot: bars)
             }
         }
+    }
+
+    private func drawBarGlow(
+        context: GraphicsContext,
+        rect: CGRect,
+        corner: CGFloat,
+        normalizedFrequency: Double,
+        normalizedLevel: Double
+    ) {
+        guard normalizedLevel > 0.08 else { return }
+        let strength = min(max((normalizedLevel - 0.08) / 0.92, 0), 1)
+        let inflate = 1.6 + CGFloat(strength) * 3.2
+        let glowRect = rect.insetBy(dx: -inflate * 0.35, dy: -inflate)
+        let color = SpectrumTheme.barGlowColor(
+            normalizedFrequency: normalizedFrequency,
+            normalizedLevel: normalizedLevel,
+            style: configuration.barStyle
+        )
+        context.fill(
+            Path(roundedRect: glowRect, cornerRadius: corner + inflate * 0.4),
+            with: .color(color.opacity(0.12 + 0.22 * strength))
+        )
+    }
+
+    private func drawBarReflection(
+        context: GraphicsContext,
+        x: CGFloat,
+        barWidth: CGFloat,
+        height: CGFloat,
+        corner: CGFloat,
+        baseline: CGFloat,
+        floorY: CGFloat,
+        normalizedFrequency: Double,
+        normalizedLevel: Double
+    ) {
+        let reflectionHeight = min(height * 0.18, max(floorY - baseline, 0))
+        guard reflectionHeight > 0.6, normalizedLevel > 0.04 else { return }
+        let rect = CGRect(x: x, y: baseline, width: barWidth, height: reflectionHeight)
+        let color = SpectrumTheme.barColor(
+            normalizedFrequency: normalizedFrequency,
+            normalizedLevel: normalizedLevel,
+            style: configuration.barStyle
+        )
+        context.fill(
+            Path(roundedRect: rect, cornerRadius: corner),
+            with: .color(color.opacity(0.18))
+        )
     }
 
     private func drawPeakHoldBar(
@@ -172,9 +276,9 @@ struct SpectrumView: View, Equatable {
             with: .color(
                 SpectrumTheme.peakHoldRectColor(
                     normalizedFrequency: normalizedFrequency,
+                    normalizedLevel: normalizedLevel(peakDB),
                     style: configuration.barStyle
                 ).opacity(0.75)
-                //).opacity(0.88)
             )
         )
     }

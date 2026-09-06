@@ -27,7 +27,7 @@ struct AboutView: View {
 
     private var versionLine: String {
         let name = Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "Spectrum"
-        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1.0"
+        let version = Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "1"
         let build = Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
         return "\(name) \(version) (\(build))"
     }

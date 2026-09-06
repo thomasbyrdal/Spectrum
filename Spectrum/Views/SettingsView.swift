@@ -125,6 +125,19 @@ struct SettingsView: View {
                     }
                 }
                 .pickerStyle(.menu)
+                Toggle("Bar glow", isOn: glowBinding)
+                Toggle("Mirrored reflection", isOn: reflectionBinding)
+            }
+            Section("Stereo spectrum") {
+                Picker("Layout", selection: stereoLayoutBinding) {
+                    ForEach(StereoSpectrumLayout.allCases) { layout in
+                        Text(layout.label).tag(layout)
+                    }
+                }
+                .pickerStyle(.menu)
+                Text("Used when Show stereo spectrum is on. Left | Right places the left channel on the left. Right over left places the right channel on top and the left channel on the bottom.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
             Section("Grid") {
                 Toggle("Show grid", isOn: gridBinding)
@@ -247,6 +260,27 @@ struct SettingsView: View {
         Binding(
             get: { viewModel.settings.configuration.barStyle },
             set: { viewModel.settings.configuration.barStyle = $0 }
+        )
+    }
+
+    private var glowBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.settings.configuration.barGlowEnabled },
+            set: { viewModel.settings.configuration.barGlowEnabled = $0 }
+        )
+    }
+
+    private var reflectionBinding: Binding<Bool> {
+        Binding(
+            get: { viewModel.settings.configuration.barReflectionEnabled },
+            set: { viewModel.settings.configuration.barReflectionEnabled = $0 }
+        )
+    }
+
+    private var stereoLayoutBinding: Binding<StereoSpectrumLayout> {
+        Binding(
+            get: { viewModel.stereoSpectrumLayout },
+            set: { viewModel.stereoSpectrumLayout = $0 }
         )
     }
 

@@ -16,6 +16,8 @@ final class SettingsViewModel {
         var next = preset.configuration
         next.barStyle = configuration.barStyle
         next.showGrid = configuration.showGrid
+        next.barGlowEnabled = configuration.barGlowEnabled
+        next.barReflectionEnabled = configuration.barReflectionEnabled
         next.peakHoldEnabled = configuration.peakHoldEnabled
         next.peakHoldStyle = configuration.peakHoldStyle
         next.smoothingEnabled = configuration.smoothingEnabled
